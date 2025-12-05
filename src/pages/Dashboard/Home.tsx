@@ -89,7 +89,7 @@ export default function Home() {
       title: 'Build',
       description: 'Dev resources.',
       icon: <CodeRoundedIcon />,
-      onClick: () => { void openUrl('https://userwallet.app/learn') }
+      onClick: () => { void openUrl('https://metanetacademy.com') }
     },
     {
       key: 'questions',

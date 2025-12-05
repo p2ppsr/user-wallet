@@ -30,7 +30,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
 import { QRCodeSVG } from 'qrcode.react'
 import { PeerPayClient, IncomingPayment } from '@bsv/message-box-client'
-import type { IdentityClient } from '@bsv/sdk'
+import type { IdentityClient, WalletInterface } from '@bsv/sdk'
 import { WalletContext } from '../../../WalletContext'
 import { toast } from 'react-toastify'
 import { MESSAGEBOX_HOST } from '../../../config'
@@ -671,15 +671,21 @@ export default function PeerPayRoute({ defaultRecipient }: PeerPayRouteProps) {
   const permissionsManager = managers?.permissionsManager
   const identityClient = clients.identityClient
 
+  const walletClientForPeerPay = useMemo<WalletInterface | null>(() => {
+    const pm = managers?.permissionsManager as any
+    const underlying = pm?.underlying as WalletInterface | undefined
+    return underlying ?? null
+  }, [managers?.permissionsManager])
+
   const peerPay = useMemo(() => {
-    if (!permissionsManager) return null
+    if (!walletClientForPeerPay) return null
     return new PeerPayClient({
-      walletClient: permissionsManager,
+      walletClient: walletClientForPeerPay,
       messageBoxHost: MESSAGEBOX_HOST,
       enableLogging: true,
       originator: adminOriginator
     })
-  }, [permissionsManager, adminOriginator])
+  }, [walletClientForPeerPay, adminOriginator])
 
   const [payments, setPayments] = useState<IncomingPayment[]>([])
   const [loading, setLoading] = useState(false)
@@ -753,10 +759,10 @@ export default function PeerPayRoute({ defaultRecipient }: PeerPayRouteProps) {
   }, [peerPay])
 
   useEffect(() => {
-    if (!permissionsManager || !adminOriginator) return undefined
+    if (!walletClientForPeerPay || !adminOriginator) return undefined
 
     let mounted = true
-    permissionsManager.getPublicKey({ identityKey: true }, adminOriginator)
+    walletClientForPeerPay.getPublicKey({ identityKey: true }, adminOriginator)
       .then(({ publicKey }) => {
         if (mounted) setIdentityKey(publicKey)
       })
@@ -765,7 +771,7 @@ export default function PeerPayRoute({ defaultRecipient }: PeerPayRouteProps) {
       })
 
     return () => { mounted = false }
-  }, [permissionsManager, adminOriginator])
+  }, [walletClientForPeerPay, adminOriginator])
 
   const handleCopyIdentityKey = useCallback(() => {
     if (!identityKey) return
