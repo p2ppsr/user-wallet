@@ -1,0 +1,545 @@
+name: 'release'
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest' # for Arm based macs (M1 and above).
+            args: '--target aarch64-apple-darwin'
+            artifact_suffix: 'macos-arm64'
+          - platform: 'macos-latest' # for Intel based macs.
+            args: '--target x86_64-apple-darwin'
+            artifact_suffix: 'macos-x64'
+          - platform: 'ubuntu-22.04'
+            args: ''
+            artifact_suffix: 'linux-x86_64'
+          - platform: 'windows-2022'
+            args: ''
+            artifact_suffix: 'windows-x64'
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: install frontend dependencies
+        run: npm install
+
+      - name: import Apple Developer Certificate
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          echo "$APPLE_CERTIFICATE" | (base64 -d 2>/dev/null || base64 --decode 2>/dev/null || base64 -D) > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          security find-identity -v -p codesigning build.keychain
+
+      - name: verify certificate
+        if: matrix.platform == 'macos-latest'
+        id: verify_certificate
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          security find-identity -v -p codesigning build.keychain || true
+          # First, try to find a Developer ID Application identity that matches the Team ID
+          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep 'Developer ID Application' | grep "$APPLE_TEAM_ID" | head -n1)
+          # Next, try any Developer ID Application identity (without Team ID match)
+          if [ -z "$CERT_INFO" ]; then
+            CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep 'Developer ID Application' | head -n1)
+          fi
+          # If still not found, fail clearly (Apple Distribution is not valid for outside-App-Store notarization)
+          if [ -z "$CERT_INFO" ]; then
+            echo "No 'Developer ID Application' identity found in build.keychain. Ensure the APPLE_CERTIFICATE contains a Developer ID Application certificate (not Apple Distribution)." >&2
+            exit 1
+          fi
+          echo "CERT_INFO=$CERT_INFO"
+          CERT_ID=$(echo "$CERT_INFO" | awk -F'\"' '{print $2}')
+          echo "cert_id=$CERT_ID" >> $GITHUB_OUTPUT
+          echo "Certificate imported and identity resolved to Developer ID Application."
+
+      - name: build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_SIGNING_IDENTITY: ${{ steps.verify_certificate.outputs.cert_id }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "v__VERSION__"
+          releaseBody: "See the assets to download this version and install."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      # === Linux AppImage Packaging and Signing ===
+      - name: Prepare AppDir for AppImage
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/128x128/apps
+          mkdir -p AppDir/usr/share/metainfo
+          cp src-tauri/target/release/metanet-client AppDir/usr/bin/
+          cp src-tauri/metanet-client.desktop AppDir/usr/share/applications/
+          cp src-tauri/app.metanet.client.metainfo.xml AppDir/usr/share/metainfo/
+          cp src-tauri/icons/128x128.png AppDir/usr/share/icons/hicolor/128x128/apps/metanet-client.png
+          # Set executable permissions
+          chmod +x AppDir/usr/bin/metanet-client
+
+      - name: Download linuxdeploy AppImage
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+      
+      - name: install appstreamcli
+        if: matrix.platform == 'ubuntu-22.04'
+        run: sudo apt-get install -y appstream
+
+      - name: Create AppImage
+        if: matrix.platform == 'ubuntu-22.04'
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        run: |
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage --icon-file=AppDir/usr/share/icons/hicolor/128x128/apps/metanet-client.png --desktop-file=AppDir/usr/share/applications/metanet-client.desktop
+          mv Metanet_Client-x86_64.AppImage metanet-client-x86_64.AppImage
+
+      - name: Import GPG Key for Linux Signing
+        if: matrix.platform == 'ubuntu-22.04'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          # Configure GPG for non-interactive use
+          export GPG_TTY=$(tty)
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --pinentry-mode loopback --import
+          # List keys to verify import
+          gpg --list-secret-keys
+
+      - name: Sign AppImage with GPG
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          export GPG_TTY=$(tty)
+          # Get the key ID from the imported key
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          gpg --batch --yes --pinentry-mode loopback --local-user $KEY_ID --detach-sign --armor metanet-client-x86_64.AppImage
+
+      - name: Create and Sign SHA256SUMS
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sha256sum metanet-client-x86_64.AppImage > SHA256SUMS
+          export GPG_TTY=$(tty)
+          # Get the key ID from the imported key
+          KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          gpg --batch --yes --pinentry-mode loopback --local-user $KEY_ID --detach-sign --armor SHA256SUMS
+
+      - name: Upload Linux Artifacts
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            metanet-client-x86_64.AppImage
+            metanet-client-x86_64.AppImage.asc
+            SHA256SUMS
+            SHA256SUMS.asc
+
+      - name: Set up certificate 
+        if: matrix.platform == 'windows-2022'
+        run: | 
+          echo "${{ secrets.DIGICERT_CLIENT_AUTH_CERT }}" | base64 --decode > /d/Certificate_pkcs12.p12 
+        shell: bash
+
+      - name: Set DigiCert environment variables
+        if: matrix.platform == 'windows-2022'
+        run: |
+          echo "SM_HOST=${{ secrets.DIGICERT_HOST }}" >> "$GITHUB_ENV"
+          echo "SM_API_KEY=${{ secrets.DIGICERT_KEY_LOCKER_API_KEY }}" >> "$GITHUB_ENV"
+          echo "SM_FINGERPRINT=${{ secrets.DIGICERT_CODE_SIGNING_SHA1_HASH }}" >> "$GITHUB_ENV"
+          echo "SM_CLIENT_CERT_FILE=D:\\Certificate_pkcs12.p12" >> "$GITHUB_ENV" 
+          echo "SM_CLIENT_CERT_PASSWORD=${{ secrets.DIGICERT_CLIENT_AUTH_PASS }}" >> "$GITHUB_ENV" 
+        shell: bash
+
+      - name: Code signing with Software Trust Manager
+        if: matrix.platform == 'windows-2022'
+        uses: digicert/ssm-code-signing@v1.1.0
+        env:
+          FORCE_DOWNLOAD_TOOLS: 'true' 
+
+      - name: DigiCert tools healthcheck
+        if: matrix.platform == 'windows-2022'
+        shell: cmd
+        run: |
+          smctl version
+          smctl healthcheck
+
+      - name: Sync KeyLocker certificate to Windows store (KSP)
+        if: matrix.platform == 'windows-2022'
+        shell: cmd
+        run: |
+          "%LOCALAPPDATA%\Temp\smtools-windows-x64\smksp_cert_sync.exe"
+          certutil.exe -csp "DigiCert Software Trust Manager KSP" -key -user
+
+      - name: Sign Windows executables with DigiCert (KSP)
+        if: matrix.platform == 'windows-2022'
+        shell: cmd
+        run: |
+          for /r "src-tauri\target\release\bundle" %%f in (*.exe *.msi) do (
+            smctl sign --fingerprint %SM_FINGERPRINT% --input "%%f"
+          )
+
+      - name: Verify Windows Signatures
+        if: matrix.platform == 'windows-2022'
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { throw "signtool.exe not found. Ensure Windows 10 SDK is installed on the runner." }
+          $files = Get-ChildItem -Recurse -Path src-tauri\target\release\bundle\ -Include *.exe,*.msi | Select-Object -ExpandProperty FullName
+          foreach ($file in $files) {
+            & $signtool verify /pa "$file"
+          }
+
+      - name: Upload Windows Artifact - MSI
+        if: matrix.platform == 'windows-2022'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msi-artifact
+          path: src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: warn
+
+      - name: Upload Windows Artifact - EXE
+        if: matrix.platform == 'windows-2022'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe-artifact
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis-web/*.exe
+          if-no-files-found: warn
+      
+      - name: List Windows build artifacts for debugging
+        if: matrix.platform == 'windows-2022'
+        shell: powershell
+        run: |
+          Write-Host "Checking build directory structure:"
+          Get-ChildItem -Path src-tauri\target\release -Recurse | Where-Object { $_.Name -like "*.exe" } | ForEach-Object { $_.FullName }
+
+      - name: Prepare binaries for site packaging
+        # if: matrix.platform != 'windows-2022'
+        env:
+          ARTIFACT_SUFFIX: ${{ matrix.artifact_suffix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-uploads
+          if [ ! -d src-tauri/target ]; then
+            echo "Expected build output directory src-tauri/target does not exist." >&2
+            exit 1
+          fi
+          find_dmg() {
+            local arch_hint="$1"
+            local dmg_path
+            if [ -n "$arch_hint" ]; then
+              dmg_path=$(find src-tauri/target -type f -name "*.dmg" -path "*${arch_hint}*" -print -quit)
+            fi
+            if [ -z "${dmg_path:-}" ]; then
+              dmg_path=$(find src-tauri/target -type f -name "*.dmg" -print -quit)
+            fi
+            echo "${dmg_path:-}"
+          }
+          case "$ARTIFACT_SUFFIX" in
+            macos-arm64)
+              dmg_path=$(find_dmg "aarch64")
+              if [ -z "${dmg_path:-}" ]; then
+                echo "No DMG found for macOS arm64 build" >&2
+                exit 1
+              fi
+              cp "$dmg_path" "release-uploads/metanet-client-macos-arm64.dmg"
+              ;;
+            macos-x64)
+              dmg_path=$(find_dmg "x86_64")
+              if [ -z "${dmg_path:-}" ]; then
+                echo "No DMG found for macOS x64 build" >&2
+                exit 1
+              fi
+              cp "$dmg_path" "release-uploads/metanet-client-macos-x64.dmg"
+              ;;
+            linux-x86_64)
+              cp metanet-client-x86_64.AppImage release-uploads/metanet-client-linux-x86_64.AppImage
+              cp metanet-client-x86_64.AppImage.asc release-uploads/metanet-client-linux-x86_64.AppImage.asc
+              cp SHA256SUMS release-uploads/SHA256SUMS
+              cp SHA256SUMS.asc release-uploads/SHA256SUMS.asc
+              ;;
+            windows-x64)
+              msi_path=$(find src-tauri/target -type f -name "*.msi" -path "*bundle/msi/*" -print -quit)
+              if [ -z "${msi_path:-}" ]; then
+                echo "No MSI installer found for Windows build" >&2
+                exit 1
+              fi
+              cp "$msi_path" "release-uploads/metanet-client-windows-x64.msi"
+              exe_path=$(
+                find src-tauri/target -type f -name "*.exe" \( -path "*bundle/nsis/*" -o -path "*bundle/nsis-web/*" \) -print -quit
+              )
+              if [ -z "${exe_path:-}" ]; then
+                exe_path=$(find src-tauri/target -type f -name "*.exe" -path "*bundle/*" -print -quit)
+              fi
+              if [ -z "${exe_path:-}" ]; then
+                echo "No EXE installer found for Windows build" >&2
+                exit 1
+              fi
+              cp "$exe_path" "release-uploads/metanet-client-windows-x64.exe"
+              ;;
+            *)
+              echo "No packaging rules for $ARTIFACT_SUFFIX; skipping."
+              ;;
+          esac
+          case "$ARTIFACT_SUFFIX" in
+            macos-arm64) UPDATER_TARGET="darwin-aarch64" ;;
+            macos-x64) UPDATER_TARGET="darwin-x86_64" ;;
+            linux-x86_64) UPDATER_TARGET="linux-x86_64" ;;
+            windows-x64) UPDATER_TARGET="windows-x86_64" ;;
+            *)
+              echo "Unknown updater target for suffix $ARTIFACT_SUFFIX" >&2
+              exit 1
+              ;;
+          esac
+          APP_VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version || ''")
+          if [ -z "${APP_VERSION:-}" ]; then
+            echo "Unable to determine application version from src-tauri/tauri.conf.json" >&2
+            exit 1
+          fi
+          PUB_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          mkdir -p release-uploads/updater
+          bundle_dirs=()
+          if [ -d src-tauri/target/release/bundle ]; then
+            bundle_dirs+=("src-tauri/target/release/bundle")
+          fi
+          while IFS= read -r dir; do
+            bundle_dirs+=("$dir")
+          done < <(find src-tauri/target -maxdepth 3 -type d -path "*/release/bundle" ! -path "src-tauri/target/release/bundle")
+          if [ ${#bundle_dirs[@]} -eq 0 ]; then
+            echo "No Tauri bundle directories found; expected updater artifacts." >&2
+            exit 1
+          fi
+          selected_package=""
+          selected_signature=""
+          for dir in "${bundle_dirs[@]}"; do
+            while IFS= read -r sig_path; do
+              candidate="${sig_path%.sig}"
+              if [ -f "$candidate" ]; then
+                selected_signature="$sig_path"
+                selected_package="$candidate"
+                break
+              fi
+            done < <(find "$dir" -type f -name '*.sig')
+            if [ -z "$selected_signature" ] && [ -d "$dir/updater" ]; then
+              while IFS= read -r sig_path; do
+                candidate="${sig_path%.sig}"
+                if [ -f "$candidate" ]; then
+                  selected_signature="$sig_path"
+                  selected_package="$candidate"
+                  break
+                fi
+              done < <(find "$dir/updater" -type f -name '*.sig')
+            fi
+            if [ -n "$selected_signature" ]; then
+              break
+            fi
+          done
+          if [ -z "$selected_signature" ] || [ -z "$selected_package" ]; then
+            echo "Unable to locate updater package and signature for $ARTIFACT_SUFFIX" >&2
+            exit 1
+          fi
+          package_filename=$(basename "$selected_package")
+          if [[ "$package_filename" == *.AppImage.tar.gz ]]; then
+            extension="AppImage.tar.gz"
+          elif [[ "$package_filename" == *.tar.gz ]]; then
+            extension="tar.gz"
+          elif [[ "$package_filename" == *.msi.zip ]]; then
+            extension="msi.zip"
+          elif [[ "$package_filename" == *.nsis.zip ]]; then
+            extension="nsis.zip"
+          elif [[ "$package_filename" == *.zip ]]; then
+            extension="zip"
+          elif [[ "$package_filename" == *.AppImage ]]; then
+            extension="AppImage"
+          else
+            if [[ "$package_filename" == *.* ]]; then
+              extension="${package_filename##*.}"
+            else
+              extension=""
+            fi
+          fi
+          if [ -n "$extension" ]; then
+            dest_package="metanet-client-${UPDATER_TARGET}.${extension}"
+          else
+            dest_package="metanet-client-${UPDATER_TARGET}"
+          fi
+          dest_signature="${dest_package}.sig"
+          cp "$selected_package" "release-uploads/updater/$dest_package"
+          cp "$selected_signature" "release-uploads/updater/$dest_signature"
+          signature=$(tr -d '\n\r' <"$selected_signature")
+          APP_VERSION="$APP_VERSION" PUB_DATE="$PUB_DATE" \
+          UPDATER_TARGET="$UPDATER_TARGET" DEST_PACKAGE="$dest_package" SIGNATURE="$signature" \
+          ARTIFACT_SUFFIX="$ARTIFACT_SUFFIX" \
+          python3 -c "import json, os, pathlib; manifest = {'version': os.environ['APP_VERSION'], 'pub_date': os.environ['PUB_DATE'], 'platforms': {os.environ['UPDATER_TARGET']: {'url': os.environ['DEST_PACKAGE'], 'signature': os.environ['SIGNATURE']}}}; path = pathlib.Path('release-uploads') / ('manifest-' + os.environ['ARTIFACT_SUFFIX'] + '.json'); path.write_text(json.dumps(manifest, indent=2) + '\n')"
+
+      - name: Upload binaries for static site
+        # if: matrix.platform != 'windows-2022'
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.artifact_suffix }}
+          path: release-uploads
+
+  package-binaries-site:
+    name: package-binaries-site
+    needs: publish-tauri
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download packaged binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-*
+          path: binaries-site/frontend
+          merge-multiple: true
+      - name: Merge updater manifests
+        run: |
+          set -euo pipefail
+          cd binaries-site/frontend
+          python3 -c "import json, os, pathlib, shutil, sys, textwrap; exec(textwrap.dedent('''\
+              frontend = pathlib.Path('.')
+              manifest_paths = sorted(frontend.glob('manifest-*.json'))
+              if not manifest_paths:
+                  print('No updater manifest fragments found; skipping merge.')
+                  sys.exit(0)
+
+              combined = {'platforms': {}}
+              version = None
+              notes = None
+              pub_date = None
+
+              for path in manifest_paths:
+                  data = json.loads(path.read_text())
+                  current_version = data.get('version')
+                  if current_version:
+                      if version is None:
+                          version = current_version
+                      elif current_version != version:
+                          print(f\"Manifest {path.name} has mismatched version {current_version} (expected {version})\", file=sys.stderr)
+                          sys.exit(1)
+                  if notes is None and data.get('notes'):
+                      notes = data['notes']
+                  if pub_date is None and data.get('pub_date'):
+                      pub_date = data['pub_date']
+
+                  platforms = data.get('platforms')
+                  if platforms is None:
+                      url = data.get('url')
+                      signature = data.get('signature')
+                      if url and signature:
+                          target_hint = path.stem.replace('manifest-', '')
+                          platforms = {target_hint: {'url': url, 'signature': signature}}
+                      else:
+                          print(f\"Manifest {path.name} missing platform data; skipping.\", file=sys.stderr)
+                          continue
+
+                  for target, payload in platforms.items():
+                      url = payload.get('url')
+                      signature = payload.get('signature')
+                      if not url or not signature:
+                          print(f\"Manifest {path.name} missing url or signature for {target}\", file=sys.stderr)
+                          sys.exit(1)
+                      filename = os.path.basename(url)
+                      final_url = f\"https://desktop-binaries.getmetanet.com/{filename}\"
+                      combined['platforms'][target] = {'url': final_url, 'signature': signature}
+                      src = frontend / 'updater' / filename
+                      dest = frontend / filename
+                      if src.exists():
+                          shutil.copy2(src, dest)
+                      elif dest.exists():
+                          pass
+                      else:
+                          print(f\"Updater package {filename} not found for target {target}\", file=sys.stderr)
+                          sys.exit(1)
+                  path.unlink()
+
+              if not combined['platforms']:
+                  print('No updater platforms collected; nothing to write.', file=sys.stderr)
+                  sys.exit(1)
+
+              if version:
+                  combined['version'] = version
+              if notes:
+                  combined['notes'] = notes
+              if pub_date:
+                  combined['pub_date'] = pub_date
+
+              manifest_path = frontend / 'manifest.json'
+              manifest_path.write_text(json.dumps(combined, indent=2))
+              print(f\"Wrote merged manifest to {manifest_path}\")
+
+              updater_dir = frontend / 'updater'
+              if updater_dir.exists():
+                  shutil.rmtree(updater_dir)
+          '''))"
+
+      - name: Inject release version into site
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          sed -i "s/__RELEASE_VERSION__/${RELEASE_VERSION}/g" binaries-site/frontend/index.html
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install CARS globally
+        run: npm i -g @bsv/cars-cli@latest
+
+      - name: Build and release artifact
+        run: cd binaries-site && cars build 0 && cars release now 0 --key "${{ secrets.CARS_PRIVATE_KEY }}"

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "User Wallet",
+  "identifier": "app.metanet.client",
+  "version": "0.6.45",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "User Wallet",
+        "width": 1620,
+        "height": 1000
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "opener": null,
+    "dialog": null,
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://desktop-binaries.getmetanet.com/manifest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU2MDdCRDQwNjhGRDQ1QjUKUldTMVJmMW9RTDBINXI3ZFJmL2JsZTlhRmhyTTBSUWZVdVg5cVQ0c1o1dEo2QmdoN2FUUFZ0QXcK"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "infoPlist": "macos-info.plist"
+    }
+  }
+}

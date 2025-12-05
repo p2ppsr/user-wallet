@@ -1,0 +1,51 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="uw-bg" x1="62" y1="40" x2="452" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E8A72" />
+      <stop offset="55%" stop-color="#0A5A78" />
+      <stop offset="100%" stop-color="#0F1624" />
+    </linearGradient>
+    <radialGradient id="uw-aurora" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) scale(260)">
+      <stop offset="0%" stop-color="#9CF0D9" stop-opacity="0.48" />
+      <stop offset="50%" stop-color="#FF9B73" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#0F1624" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="uw-stroke" x1="150" y1="140" x2="360" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5DE2C2" />
+      <stop offset="50%" stop-color="#9CF0D9" />
+      <stop offset="100%" stop-color="#FF8A3D" />
+    </linearGradient>
+    <linearGradient id="uw-fill" x1="120" y1="120" x2="340" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E8A72" />
+      <stop offset="100%" stop-color="#0F1624" />
+    </linearGradient>
+    <filter id="uw-glow" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.4 0" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="26" y="26" width="460" height="460" rx="120" fill="url(#uw-bg)" />
+  <rect x="46" y="46" width="420" height="420" rx="108" fill="url(#uw-aurora)" />
+
+  <g filter="url(#uw-glow)">
+    <rect x="130" y="120" width="252" height="272" rx="64" fill="url(#uw-fill)" stroke="#1DF3C4" stroke-width="3" opacity="0.94" />
+    <rect x="156" y="146" width="200" height="220" rx="48" fill="#FFFFFF0D" stroke="#FFFFFF1A" stroke-width="2" />
+
+    <path d="M178 238h156c14 0 25.5 11.5 25.5 25.5S348 289 334 289H178" stroke="url(#uw-stroke)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+
+    <path d="M174 206c0-20.4 16.6-37 37-37h90c20.4 0 37 16.6 37 37v130c0 35.6-28.9 64.5-64.5 64.5h-35c-35.6 0-64.5-28.9-64.5-64.5V206Z" fill="#00000030" stroke="#FFFFFF24" stroke-width="4" />
+
+    <path d="M190 214v104c0 26.3 21.4 47.7 47.7 47.7h12.6c26.3 0 47.7-21.4 47.7-47.7V214c0-13.8-11.2-25-25-25h-58c-13.8 0-25 11.2-25 25Z" fill="#FFFFFF12" stroke="url(#uw-stroke)" stroke-width="10" stroke-linejoin="round" />
+
+    <circle cx="326" cy="205" r="20" fill="#FF8A3D" />
+    <circle cx="326" cy="205" r="9" fill="#FFF" opacity="0.9" />
+
+    <circle cx="194" cy="168" r="10" fill="#5DE2C2" opacity="0.8" />
+    <circle cx="158" cy="302" r="9" fill="#5DE2C2" opacity="0.7" />
+  </g>
+</svg>

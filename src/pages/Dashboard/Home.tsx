@@ -1,0 +1,270 @@
+import { useMemo, type JSX } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Box,
+  Card,
+  CardActionArea,
+  Container,
+  Grid,
+  Stack,
+  Typography,
+  useTheme,
+  alpha
+} from '@mui/material'
+import SendRoundedIcon from '@mui/icons-material/SendRounded'
+import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded'
+import ShoppingBagRoundedIcon from '@mui/icons-material/ShoppingBagRounded'
+import AppsRoundedIcon from '@mui/icons-material/AppsRounded'
+import CodeRoundedIcon from '@mui/icons-material/CodeRounded'
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded'
+import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
+import { openUrl } from '../../utils/openUrl'
+
+// --- Animations ---
+const hoverLift = {
+  transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-6px)',
+    boxShadow: (theme: any) => `0 12px 24px -10px ${alpha(theme.palette.primary.main, 0.4)}`
+  }
+}
+
+const pulseAnimation = {
+  '@keyframes pulse': {
+    '0%': { boxShadow: '0 0 0 0 currentColor' },
+    '70%': { boxShadow: '0 0 0 15px rgba(0, 0, 0, 0)' },
+    '100%': { boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)' }
+  }
+}
+
+type HomeAction = {
+  key: string
+  title: string
+  description: string
+  icon: JSX.Element
+  onClick: () => void
+  highlight?: boolean // Prop to identify standard high-vis items
+}
+
+export default function Home() {
+  const navigate = useNavigate()
+  const theme = useTheme()
+
+  const isLight = theme.palette.mode === 'light'
+
+  // 1. We separate the "Hero" action (Use Apps) from the others
+  const heroAction = useMemo<HomeAction>(() => ({
+    key: 'use-apps',
+    title: 'Launch Apps',
+    description: 'Enter the ecosystem. Browse and launch apps built for your identity.',
+    icon: <AppsRoundedIcon sx={{ fontSize: 48 }} />, // Larger Icon
+    onClick: () => navigate('/dashboard/apps')
+  }), [navigate])
+
+  // 2. The remaining "Control Panel" actions
+  const secondaryActions = useMemo<HomeAction[]>(() => ([
+    {
+      key: 'send',
+      title: 'Send',
+      description: 'Pay instantly.',
+      icon: <SendRoundedIcon />,
+      onClick: () => navigate('/dashboard/payments?tab=send')
+    },
+    {
+      key: 'receive',
+      title: 'Receive',
+      description: 'Get paid.',
+      icon: <CallReceivedRoundedIcon />,
+      onClick: () => navigate('/dashboard/payments?tab=receive')
+    },
+    {
+      key: 'buy',
+      title: 'Buy / Sell',
+      description: 'Manage coins.',
+      icon: <ShoppingBagRoundedIcon />,
+      onClick: () => { void openUrl('https://www.youtube.com/live/vyaJ-H7CRQ4?si=T9qMMjVFrd1M8Fkc&t=4199') }
+    },
+    {
+      key: 'build-apps',
+      title: 'Build',
+      description: 'Dev resources.',
+      icon: <CodeRoundedIcon />,
+      onClick: () => { void openUrl('https://userwallet.app/learn') }
+    },
+    {
+      key: 'questions',
+      title: 'Community',
+      description: 'Join BSV Chat.',
+      icon: <ChatBubbleOutlineRoundedIcon />,
+      onClick: () => { void openUrl('https://join.bsv.chat') }
+    }
+  ]), [navigate])
+
+  return (
+    <Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
+      
+      {/* Header Section */}
+      <Stack spacing={1} sx={{ mb: 5, textAlign: 'center' }}>
+        <Typography variant="h3" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+          Command Center
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Manage your digital life from one place.
+        </Typography>
+      </Stack>
+
+      {/* Main Grid Layout */}
+      <Grid container spacing={3}>
+        
+        {/* HERO CARD: "Use Apps" */}
+        {/* Spans full width on small screens, full width on top of grid */}
+        <Grid item xs={12}>
+          <Card
+            elevation={0}
+            sx={{
+              position: 'relative',
+              overflow: 'visible', // allow glow to spill out
+              borderRadius: 5,
+              background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.95), rgba(242,245,255,0.96))'
+                : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)}, ${alpha(theme.palette.secondary.main, 0.2)})`,
+              color: theme.palette.text.primary,
+              border: `1px solid ${alpha(theme.palette.primary.main, isLight ? 0.15 : 0.25)}`,
+              boxShadow: isLight
+                ? '0 12px 35px rgba(64, 75, 105, 0.15)'
+                : '0 16px 38px rgba(0,0,0,0.35)',
+              ...pulseAnimation,
+              animation: 'pulse 3s infinite',
+              transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              '&:hover': {
+                transform: 'scale(1.02)',
+                zIndex: 10,
+              }
+            }}
+          >
+            <CardActionArea 
+              onClick={heroAction.onClick}
+              sx={{ p: { xs: 4, md: 6 }, height: '100%' }}
+            >
+              <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" spacing={4} justifyContent="center">
+                {/* Icon Circle */}
+                <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: '50%',
+                    bgcolor: isLight
+                      ? alpha(theme.palette.primary.main, 0.1)
+                      : alpha(theme.palette.common.white, 0.15),
+                    backdropFilter: 'blur(10px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: isLight
+                      ? '0 10px 24px rgba(64, 75, 105, 0.18)'
+                      : '0 8px 32px rgba(0,0,0,0.25)',
+                    border: `1px solid ${alpha(isLight ? theme.palette.primary.main : theme.palette.common.white, 0.25)}`,
+                    color: theme.palette.primary.main
+                  }}
+                >
+                  {heroAction.icon}
+                </Box>
+
+                {/* Text Content */}
+                <Stack spacing={1} alignItems={{ xs: 'center', sm: 'flex-start' }} textAlign={{ xs: 'center', sm: 'left' }}>
+                  <Typography variant="h4" fontWeight={800}>
+                    {heroAction.title}
+                  </Typography>
+                  <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 400, maxWidth: 400 }}>
+                    {heroAction.description}
+                  </Typography>
+                  
+                  {/* Fake "Button" for visual affordance */}
+                  <Box 
+                    sx={{ 
+                      mt: 2, 
+                      py: 1, 
+                      px: 3, 
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                      color: theme.palette.common.white, 
+                      borderRadius: 50, 
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      textTransform: 'uppercase',
+                      fontSize: '0.85rem',
+                      letterSpacing: '0.05em'
+                    }}
+                  >
+                    Open Portal <LaunchRoundedIcon fontSize="small" />
+                  </Box>
+                </Stack>
+              </Stack>
+            </CardActionArea>
+          </Card>
+        </Grid>
+
+        {/* SECONDARY ACTIONS */}
+        {/* A tighter grid for the utilitarian items */}
+        {secondaryActions.map((action, index) => (
+          // Logic: First 3 items (Financial) take 4 columns each (3 per row).
+          // Last 2 items (Info/Comm) take 6 columns each (2 per row) for visual balance.
+          <Grid item xs={12} sm={6} md={index < 3 ? 4 : 6} key={action.key}>
+            <Card
+              elevation={0}
+              sx={{
+                height: '100%',
+                borderRadius: 4,
+                border: `1px solid ${theme.palette.divider}`,
+                bgcolor: theme.palette.background.paper,
+                ...hoverLift
+              }}
+            >
+              <CardActionArea
+                onClick={action.onClick}
+                sx={{
+                  height: '100%',
+                  p: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 2
+                }}
+              >
+                <Stack direction="row" justifyContent="space-between" width="100%">
+                   <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 3,
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      color: 'primary.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {action.icon}
+                  </Box>
+                  {/* Subtle arrow to indicate action */}
+                  <LaunchRoundedIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
+                </Stack>
+               
+                <Box>
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
+                    {action.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+                    {action.description}
+                  </Typography>
+                </Box>
+              </CardActionArea>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
+  )
+}

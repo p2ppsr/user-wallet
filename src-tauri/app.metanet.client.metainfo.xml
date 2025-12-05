@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>app.metanet.client</id>
+  <metadata_license>PROPRIETARY</metadata_license>
+  <project_license>PROPRIETARY</project_license>
+  <name>User Wallet</name>
+  <summary>Experience the future of apps</summary>
+  <description>
+    <p>
+      A desktop application for interacting with the BSV Blockchain.
+      Provides tools for managing digital identities, certificates, and blockchain interactions.
+    </p>
+  </description>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <url type="homepage">https://github.com/p2ppsr/metanet-client-desktop</url>
+  <provides>
+    <binary>metanet-client</binary>
+  </provides>
+  <releases>
+    <release version="0.6.25" date="2025-10-23"/>
+  </releases>
+</component>

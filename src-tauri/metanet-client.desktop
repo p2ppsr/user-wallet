@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=User Wallet
+Comment=Experience the future of apps
+Exec=metanet-client
+Icon=metanet-client
+Categories=Office;Finance;
+StartupNotify=true
+StartupWMClass=metanet-client

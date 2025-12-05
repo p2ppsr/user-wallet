@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Wallet Downloads</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      background: radial-gradient(circle at top, #172445, #0d1117 55%);
+      color: #e6edf3;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 4rem;
+    }
+
+    .mobile-banner {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgba(56, 189, 248, 0.18);
+      color: #d5f5ff;
+      font-weight: 600;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .mobile-banner a {
+      color: #7dd3fc;
+      text-decoration: underline;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 2.75rem;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(63, 124, 251, 0.16);
+      color: #9bbcff;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .version-badge strong {
+      color: #cfe0ff;
+    }
+
+    .hero h1 {
+      margin: 1rem 0 0.75rem;
+      font-size: clamp(2rem, 4vw, 2.65rem);
+      letter-spacing: -0.02em;
+    }
+
+    .hero .intro {
+      margin: 0 auto;
+      max-width: 580px;
+      color: #9da5b4;
+      font-size: 1.05rem;
+    }
+
+    .hero-actions {
+      margin: 1.75rem auto 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.8rem 1.4rem;
+      border-radius: 999px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .cta.primary {
+      background: linear-gradient(135deg, #2563eb, #60a5fa);
+      color: #f8fbff;
+      box-shadow: 0 12px 30px rgba(59, 130, 246, 0.35);
+    }
+
+    .cta.primary:hover,
+    .cta.primary:focus-visible {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      transform: translateY(-1px);
+    }
+
+    .cta.secondary {
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: #e6edf3;
+      background: rgba(15, 23, 42, 0.35);
+    }
+
+    .cta.secondary:hover,
+    .cta.secondary:focus-visible {
+      border-color: rgba(148, 163, 184, 0.8);
+      transform: translateY(-1px);
+    }
+
+    .detected {
+      margin: 0.5rem 0 0;
+      color: #8cc8ff;
+      font-size: 0.95rem;
+    }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .download-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 1.75rem 1.5rem;
+      background: rgba(13, 17, 23, 0.78);
+      border: 1px solid rgba(93, 114, 146, 0.38);
+      border-radius: 18px;
+      box-shadow: 0 24px 48px rgba(2, 6, 23, 0.35);
+      transition: border 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .download-card header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .download-card h2 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .platform-tag {
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(79, 70, 229, 0.2);
+      color: #b8c4ff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .download-card .summary {
+      margin: 0 0 1.25rem;
+      color: #9da5b4;
+      font-size: 0.98rem;
+    }
+
+    .download-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .resource {
+      display: block;
+      padding: 0.9rem 1rem;
+      border-radius: 12px;
+      background: rgba(37, 99, 235, 0.14);
+      color: #d7e3ff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .resource small {
+      display: block;
+      margin-top: 0.2rem;
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: rgba(215, 227, 255, 0.75);
+    }
+
+    .resource.secondary {
+      background: rgba(15, 23, 42, 0.45);
+      color: #cbd5f5;
+    }
+
+    .resource:hover,
+    .resource:focus-visible {
+      background: rgba(59, 130, 246, 0.38);
+      color: #f8fbff;
+      transform: translateY(-1px);
+    }
+
+    .resource.recommended {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.7), rgba(56, 189, 248, 0.7));
+      color: #f8fbff;
+      box-shadow: 0 16px 40px rgba(59, 130, 246, 0.35);
+    }
+
+    .download-card.recommended {
+      border-color: rgba(96, 165, 250, 0.8);
+      box-shadow: 0 28px 56px rgba(37, 99, 235, 0.28);
+      transform: translateY(-2px);
+    }
+
+    .integrity {
+      margin-top: 1.25rem;
+      font-size: 0.95rem;
+      color: #9da5b4;
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.95rem;
+      color: #7b8491;
+      text-align: center;
+    }
+
+    footer a {
+      color: #8cc8ff;
+    }
+
+    code {
+      padding: 0.1rem 0.35rem;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.65);
+      color: #e6edf3;
+      font-family: ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+    }
+
+    @media (max-width: 680px) {
+      .container {
+        padding: 2.5rem 1.25rem 3rem;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .hero .intro {
+        font-size: 1rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="mobile-banner" data-role="mobile-banner" hidden>
+    Get mobile by going to
+    <a href="https://userwallet.app" target="_blank" rel="noopener">UserWallet.app</a>
+  </div>
+  <main class="container">
+    <header class="hero">
+      <span class="version-badge">Latest tag: <strong>__RELEASE_VERSION__</strong></span>
+      <h1>Download User Wallet</h1>
+      <p class="intro">
+        Stay connected to your peers with the secure User Wallet desktop app. Grab the build that matches
+        your device and get online in minutes.
+      </p>
+      <div class="hero-actions">
+        <a id="primary-download" class="cta primary" href="#downloads">Browse desktop downloads</a>
+        <a class="cta secondary" href="https://userwallet.app/downloads" target="_blank" rel="noopener">Main Download Page</a>
+      </div>
+      <p class="detected" id="detected-os" hidden>
+        Looks like you're on <span id="detected-os-name"></span>. We've highlighted the best match for you.
+      </p>
+    </header>
+
+    <section id="downloads" class="download-grid">
+      <article class="download-card" data-card-os="macos">
+        <header>
+          <h2>macOS</h2>
+          <span class="platform-tag">macOS 11+</span>
+        </header>
+        <p class="summary">Install the native desktop build tailored for your Mac.</p>
+        <ul class="download-list">
+          <li>
+            <a class="resource" data-os="macos" data-arch="arm64" href="./metanet-client-macos-arm64.dmg" download>
+              Download for Apple&nbsp;Silicon
+              <small>DMG installer (arm64)</small>
+            </a>
+          </li>
+          <li>
+            <a class="resource" data-os="macos" data-arch="x64" href="./metanet-client-macos-x64.dmg" download>
+              Download for Intel Macs
+              <small>DMG installer (x64)</small>
+            </a>
+          </li>
+        </ul>
+      </article>
+
+      <article class="download-card" data-card-os="linux">
+        <header>
+          <h2>Linux</h2>
+          <span class="platform-tag">x86_64</span>
+        </header>
+        <p class="summary">
+          Grab the portable AppImage or verify the build with published signatures and hashes.
+        </p>
+        <ul class="download-list">
+          <li>
+            <a class="resource" data-os="linux" data-arch="x86_64" href="./metanet-client-linux-x86_64.AppImage"
+              download>
+              Download AppImage
+              <small>Desktop AppImage (x86_64)</small>
+            </a>
+          </li>
+          <li>
+            <a class="resource secondary" href="./metanet-client-linux-x86_64.AppImage.asc" download>
+              GPG Signature
+            </a>
+          </li>
+          <li>
+            <a class="resource secondary" href="./SHA256SUMS" download>SHA256 Checksums</a>
+          </li>
+          <li>
+            <a class="resource secondary" href="./SHA256SUMS.asc" download>Checksums Signature</a>
+          </li>
+        </ul>
+        <p class="integrity">
+          Verify the download with <code>sha256sum --check SHA256SUMS</code> and
+          <code>gpg --verify SHA256SUMS.asc</code>.
+        </p>
+      </article>
+
+      <article class="download-card" data-card-os="windows">
+        <header>
+          <h2>Windows</h2>
+          <span class="platform-tag">Windows 10+</span>
+        </header>
+        <p class="summary">
+          Install the signed Windows builds for the best desktop experience.
+        </p>
+        <ul class="download-list">
+          <li>
+            <a class="resource" data-os="windows" data-arch="x64" href="./metanet-client-windows-x64.msi" download>
+              Download MSI Installer
+              <small>Digitally signed MSI (x64)</small>
+            </a>
+          </li>
+          <li>
+            <a class="resource" data-os="windows" data-arch="x64" href="./metanet-client-windows-x64.exe" download>
+              Download EXE Installer
+              <small>Signed NSIS installer (x64)</small>
+            </a>
+          </li>
+        </ul>
+        <p class="integrity">
+          Builds are signed with DigiCert Software Trust Manager certificates.
+        </p>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const heroCta = document.getElementById("primary-download");
+      const detectedMessage = document.getElementById("detected-os");
+      const detectedName = document.getElementById("detected-os-name");
+      const resources = document.querySelectorAll("a.resource[data-os]");
+      const mobileBanner = document.querySelector('[data-role="mobile-banner"]');
+
+      const getPlatformInfo = () => {
+        const uaData = navigator.userAgentData;
+        const ua = navigator.userAgent || navigator.platform || "";
+        const platform = (navigator.platform || "").toLowerCase();
+        const arch = uaData && uaData.architecture ? uaData.architecture.toLowerCase() : "";
+
+        const isMobile = uaData ? uaData.mobile : /android|iphone|ipad|ipod/i.test(ua);
+        const isMac = /mac/i.test(platform) || /mac os x/i.test(ua);
+        const isIOS = /iphone|ipad|ipod/i.test(ua);
+        const isLinux = /linux|x11|bsd/i.test(platform) || /linux/i.test(ua);
+        const isWindows = /win/i.test(platform) || /windows/i.test(ua);
+
+        let detectedOS = null;
+        if (isIOS || (isMobile && isMac)) {
+          detectedOS = "ios";
+        } else if (isMac) {
+          detectedOS = "macos";
+        } else if (isLinux) {
+          detectedOS = "linux";
+        } else if (isWindows) {
+          detectedOS = "windows";
+        }
+
+        let detectedArch = null;
+        if (arch) {
+          if (arch.includes("arm")) detectedArch = "arm64";
+          if (arch.includes("x86") || arch.includes("amd64") || arch.includes("x64")) detectedArch = "x64";
+        } else if (/arm|aarch64/i.test(ua)) {
+          detectedArch = "arm64";
+        }
+
+        return { os: detectedOS, arch: detectedArch, isMobile };
+      };
+
+      const { os, arch, isMobile } = getPlatformInfo();
+
+      if (isMobile && mobileBanner) {
+        mobileBanner.hidden = false;
+      }
+
+      if (!os || os === "ios") {
+        if (heroCta) {
+          heroCta.textContent = "Browse desktop downloads";
+          heroCta.href = "#downloads";
+          heroCta.removeAttribute("download");
+        }
+        return;
+      }
+
+      const resourceLinks = Array.from(resources);
+      const exactMatch = resourceLinks.find((link) => {
+        return link.dataset.os === os && link.dataset.arch && arch && link.dataset.arch === arch;
+      });
+      const fallbackMatch = resourceLinks.find((link) => link.dataset.os === os);
+
+      const recommendation = exactMatch || fallbackMatch;
+      if (!recommendation) {
+        return;
+      }
+
+      recommendation.classList.add("recommended");
+      const parentCard = recommendation.closest("[data-card-os]");
+      if (parentCard) {
+        parentCard.classList.add("recommended");
+      }
+
+      if (heroCta) {
+        const cardTitle = parentCard ? parentCard.querySelector("h2").textContent : "your OS";
+        heroCta.textContent = `Download for ${cardTitle}`;
+        heroCta.href = recommendation.getAttribute("href");
+        if (recommendation.hasAttribute("download")) {
+          heroCta.setAttribute("download", recommendation.getAttribute("download") || "");
+        } else {
+          heroCta.removeAttribute("download");
+        }
+      }
+
+      if (detectedMessage && detectedName && parentCard) {
+        detectedName.textContent = parentCard.querySelector("h2").textContent;
+        detectedMessage.hidden = false;
+      }
+    })();
+  </script>
+</body>
+
+</html>
