@@ -1,7 +1,8 @@
-import { useMemo, type JSX } from 'react'
+import { useContext, useMemo, useState, type JSX } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Box,
+  Button,
   Card,
   CardActionArea,
   Container,
@@ -11,6 +12,7 @@ import {
   useTheme,
   alpha
 } from '@mui/material'
+import type { WalletInterface } from '@bsv/sdk'
 import SendRoundedIcon from '@mui/icons-material/SendRounded'
 import CallReceivedRoundedIcon from '@mui/icons-material/CallReceivedRounded'
 import ShoppingBagRoundedIcon from '@mui/icons-material/ShoppingBagRounded'
@@ -19,6 +21,9 @@ import CodeRoundedIcon from '@mui/icons-material/CodeRounded'
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded'
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
 import { openUrl } from '../../utils/openUrl'
+import CustomDialog from '../../components/CustomDialog'
+import { WalletContext } from '../../WalletContext'
+import { showSatoshiShopFundingModal } from '../Shop/shopModal'
 
 // --- Animations ---
 const hoverLift = {
@@ -49,6 +54,16 @@ type HomeAction = {
 export default function Home() {
   const navigate = useNavigate()
   const theme = useTheme()
+
+  const { managers } = useContext(WalletContext)
+  const [buySellOpen, setBuySellOpen] = useState(false)
+  const [isFunding, setIsFunding] = useState(false)
+
+  const walletClientForFunding = useMemo<WalletInterface | null>(() => {
+    const pm = managers?.permissionsManager as any
+    const underlying = pm?.underlying as WalletInterface | undefined
+    return underlying ?? null
+  }, [managers?.permissionsManager])
 
   const isLight = theme.palette.mode === 'light'
 
@@ -82,7 +97,7 @@ export default function Home() {
       title: 'Buy / Sell',
       description: 'Manage coins.',
       icon: <ShoppingBagRoundedIcon />,
-      onClick: () => { void openUrl('https://www.youtube.com/live/vyaJ-H7CRQ4?si=T9qMMjVFrd1M8Fkc&t=4199') }
+      onClick: () => { setBuySellOpen(true) }
     },
     {
       key: 'build-apps',
@@ -99,6 +114,27 @@ export default function Home() {
       onClick: () => { void openUrl('https://join.bsv.chat') }
     }
   ]), [navigate])
+
+  const handleBuy = async () => {
+    const wallet = walletClientForFunding
+    if (!wallet) {
+      setBuySellOpen(false)
+      return
+    }
+
+    try {
+      setIsFunding(true)
+      await showSatoshiShopFundingModal(wallet, 0, {
+        title: 'Buy BSV Satoshis',
+        introText: 'Use your card to top up your BSV wallet.',
+        postPurchaseText: 'Once your sats arrive, you can spend them from your wallet.',
+        cancelText: 'Close'
+      })
+    } finally {
+      setIsFunding(false)
+      setBuySellOpen(false)
+    }
+  }
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
@@ -265,6 +301,72 @@ export default function Home() {
           </Grid>
         ))}
       </Grid>
+
+      <CustomDialog
+        open={buySellOpen}
+        onClose={isFunding ? undefined : () => setBuySellOpen(false)}
+        title="Buy / Sell BSV"
+      >
+        <Stack spacing={3} sx={{ pt: 1 }}>
+          <Typography variant="body1">
+            Choose how you want to manage your BSV satoshis.
+          </Typography>
+
+          <Stack direction="column" spacing={2}>
+            <Box
+              sx={{
+                flex: 1,
+                p: 2,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider'
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Buy
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Purchase BSV satoshis with your card via Satoshi Shop.
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                disabled={isFunding}
+                onClick={handleBuy}
+              >
+                {isFunding ? 'Opening Buy Flow…' : 'Buy Sats'}
+              </Button>
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                p: 2,
+                borderRadius: 3,
+                border: '1px dashed',
+                borderColor: 'divider',
+                opacity: 0.7
+              }}
+            >
+              <Typography variant="h6" gutterBottom>
+                Sell
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Coming Soon
+              </Typography>
+              <Button
+                variant="outlined"
+                color="inherit"
+                fullWidth
+                disabled
+              >
+                Sell (Coming Soon)
+              </Button>
+            </Box>
+          </Stack>
+        </Stack>
+      </CustomDialog>
     </Container>
   )
 }
