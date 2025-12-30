@@ -1,5 +1,5 @@
 [package]
-name = "metanet-client"
+name = "user-wallet"
 version = "0.6.45"
 description = "An example desktop wallet"
 authors = ["you"]

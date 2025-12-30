@@ -2233,32 +2233,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "metanet-client"
-version = "0.6.45"
-dependencies = [
- "dashmap",
- "hyper 0.14.32",
- "image",
- "libc",
- "objc",
- "rcgen",
- "reqwest 0.11.27",
- "rustls 0.21.12",
- "rustls-pemfile",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tauri-plugin-updater",
- "tokio",
- "tokio-rustls 0.24.1",
- "url",
- "windows-sys 0.52.0",
-]
-
-[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5053,6 +5027,32 @@ dependencies = [
  "serde",
  "unic-ucd-ident",
  "url",
+]
+
+[[package]]
+name = "user-wallet"
+version = "0.6.45"
+dependencies = [
+ "dashmap",
+ "hyper 0.14.32",
+ "image",
+ "libc",
+ "objc",
+ "rcgen",
+ "reqwest 0.11.27",
+ "rustls 0.21.12",
+ "rustls-pemfile",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tauri-plugin-updater",
+ "tokio",
+ "tokio-rustls 0.24.1",
+ "url",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-name: metanet-client
+name: user-wallet
 options:
   bundleIdPrefix: app.metanet.client
   deploymentTarget:
@@ -24,20 +24,20 @@ targetTemplates:
     settings:
       groups: [app]
 targets:
-  metanet-client_iOS:
+  user-wallet_iOS:
     type: application
     platform: iOS
     sources:
       - path: Sources
       - path: Assets.xcassets
       - path: Externals
-      - path: metanet-client_iOS
+      - path: user-wallet_iOS
       - path: assets
         buildPhase: resources
         type: folder
       - path: LaunchScreen.storyboard
     info:
-      path: metanet-client_iOS/Info.plist
+      path: user-wallet_iOS/Info.plist
       properties:
         LSRequiresIPhoneOS: true
         UILaunchStoryboardName: LaunchScreen
@@ -54,7 +54,7 @@ targets:
         CFBundleShortVersionString: 0.6.28
         CFBundleVersion: "0.6.28"
     entitlements:
-      path: metanet-client_iOS/metanet-client_iOS.entitlements
+      path: user-wallet_iOS/user-wallet_iOS.entitlements
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full

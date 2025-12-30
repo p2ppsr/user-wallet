@@ -14,9 +14,9 @@
   <categories>
     <category>Utility</category>
   </categories>
-  <url type="homepage">https://github.com/p2ppsr/metanet-client-desktop</url>
+  <url type="homepage">https://github.com/p2ppsr/user-wallet</url>
   <provides>
-    <binary>metanet-client</binary>
+    <binary>user-wallet</binary>
   </provides>
   <releases>
     <release version="0.6.25" date="2025-10-23"/>

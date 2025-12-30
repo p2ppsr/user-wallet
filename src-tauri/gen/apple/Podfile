@@ -1,13 +1,13 @@
 # Uncomment the next line to define a global platform for your project
 
-target 'metanet-client_iOS' do
+target 'user-wallet_iOS' do
 platform :ios, '14.0'
-  # Pods for metanet-client_iOS
+  # Pods for user-wallet_iOS
 end
 
-target 'metanet-client_macOS' do
+target 'user-wallet_macOS' do
 platform :osx, '11.0'
-  # Pods for metanet-client_macOS
+  # Pods for user-wallet_macOS
 end
 
 # Delete the deployment target for iOS and macOS, causing it to be inherited from the Podfile

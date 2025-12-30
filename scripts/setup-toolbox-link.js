@@ -24,7 +24,7 @@ const fail = (msg) => {
 if (!fs.existsSync(toolboxClientPath)) {
   fail(
     `Expected wallet-toolbox client at ${toolboxClientPath}. ` +
-    'Make sure the wallet-toolbox repo is checked out next to metanet-client-desktop.'
+    'Make sure the wallet-toolbox repo is checked out next to user-wallet-desktop.'
   );
 }
 

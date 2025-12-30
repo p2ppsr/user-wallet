@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "8C0956E12669C10F9A091EFC"
                BuildableName = "Metanet Client.app"
-               BlueprintName = "metanet-client_iOS"
-               ReferencedContainer = "container:metanet-client.xcodeproj">
+               BlueprintName = "user-wallet_iOS"
+               ReferencedContainer = "container:user-wallet.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,8 +32,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8C0956E12669C10F9A091EFC"
             BuildableName = "Metanet Client.app"
-            BlueprintName = "metanet-client_iOS"
-            ReferencedContainer = "container:metanet-client.xcodeproj">
+            BlueprintName = "user-wallet_iOS"
+            ReferencedContainer = "container:user-wallet.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <EnvironmentVariables>
@@ -67,8 +67,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8C0956E12669C10F9A091EFC"
             BuildableName = "Metanet Client.app"
-            BlueprintName = "metanet-client_iOS"
-            ReferencedContainer = "container:metanet-client.xcodeproj">
+            BlueprintName = "user-wallet_iOS"
+            ReferencedContainer = "container:user-wallet.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <EnvironmentVariables>
@@ -96,8 +96,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8C0956E12669C10F9A091EFC"
             BuildableName = "Metanet Client.app"
-            BlueprintName = "metanet-client_iOS"
-            ReferencedContainer = "container:metanet-client.xcodeproj">
+            BlueprintName = "user-wallet_iOS"
+            ReferencedContainer = "container:user-wallet.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <EnvironmentVariables>

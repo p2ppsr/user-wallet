@@ -169,21 +169,21 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
   }, [])
 
   useEffect(() => {
-    if (!identityClient) return
+    if (!identityClient) return undefined
 
     const trimmed = recipient.trim()
     if (!trimmed) {
       setResolvedIdentity(null)
       setResolutionError(null)
       setResolvingIdentity(false)
-      return
+      return undefined
     }
 
     const isLikelyIdentityKey = /^[0-9a-f]{20,}$/i.test(trimmed)
     if (!isLikelyIdentityKey) {
       setResolvedIdentity(null)
       setResolutionError('Identity keys are hex values. Paste a full key or search above.')
-      return
+      return undefined
     }
 
     let cancelled = false
@@ -440,9 +440,9 @@ function PaymentList({ payments, onRefresh, peerPay, loading, identityClient }: 
   }
 
   useEffect(() => {
-    if (!identityClient) return
+    if (!identityClient) return undefined
     const missingKeys = Array.from(new Set(payments.map((p) => p.sender))).filter((key) => !senderDetails[key])
-    if (missingKeys.length === 0) return
+    if (missingKeys.length === 0) return undefined
 
     let cancelled = false
     ;(async () => {
@@ -668,7 +668,6 @@ export default function PeerPayRoute({ defaultRecipient }: PeerPayRouteProps) {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const permissionsManager = managers?.permissionsManager
   const identityClient = clients.identityClient
 
   const walletClientForPeerPay = useMemo<WalletInterface | null>(() => {
