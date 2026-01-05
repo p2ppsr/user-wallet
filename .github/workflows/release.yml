@@ -5,11 +5,6 @@ on:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Branch or tag to build'
-        required: true
-        default: 'master'
 
 jobs:
   publish-tauri:
@@ -114,8 +109,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
-          releaseName: "v__VERSION__"
-          releaseBody: "See the assets to download this version and install."
+          releaseName: 'v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -140,7 +135,7 @@ jobs:
         run: |
           wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage
-      
+
       - name: install appstreamcli
         if: matrix.platform == 'ubuntu-22.04'
         run: sudo apt-get install -y appstream
@@ -192,10 +187,10 @@ jobs:
             SHA256SUMS
             SHA256SUMS.asc
 
-      - name: Set up certificate 
+      - name: Set up certificate
         if: matrix.platform == 'windows-2022'
-        run: | 
-          echo "${{ secrets.DIGICERT_CLIENT_AUTH_CERT }}" | base64 --decode > /d/Certificate_pkcs12.p12 
+        run: |
+          echo "${{ secrets.DIGICERT_CLIENT_AUTH_CERT }}" | base64 --decode > /d/Certificate_pkcs12.p12
         shell: bash
 
       - name: Set DigiCert environment variables
@@ -205,14 +200,14 @@ jobs:
           echo "SM_API_KEY=${{ secrets.DIGICERT_KEY_LOCKER_API_KEY }}" >> "$GITHUB_ENV"
           echo "SM_FINGERPRINT=${{ secrets.DIGICERT_CODE_SIGNING_SHA1_HASH }}" >> "$GITHUB_ENV"
           echo "SM_CLIENT_CERT_FILE=D:\\Certificate_pkcs12.p12" >> "$GITHUB_ENV" 
-          echo "SM_CLIENT_CERT_PASSWORD=${{ secrets.DIGICERT_CLIENT_AUTH_PASS }}" >> "$GITHUB_ENV" 
+          echo "SM_CLIENT_CERT_PASSWORD=${{ secrets.DIGICERT_CLIENT_AUTH_PASS }}" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Code signing with Software Trust Manager
         if: matrix.platform == 'windows-2022'
         uses: digicert/ssm-code-signing@v1.1.0
         env:
-          FORCE_DOWNLOAD_TOOLS: 'true' 
+          FORCE_DOWNLOAD_TOOLS: 'true'
 
       - name: DigiCert tools healthcheck
         if: matrix.platform == 'windows-2022'
@@ -264,7 +259,7 @@ jobs:
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/nsis-web/*.exe
           if-no-files-found: warn
-      
+
       - name: List Windows build artifacts for debugging
         if: matrix.platform == 'windows-2022'
         shell: powershell
@@ -545,3 +540,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Install CARS globally
+        run: npm i -g @bsv/cars-cli@latest
+
+      - name: Build and release artifact
+        run: cd binaries-site && cars build 0 && cars release now 0 --key "${{ secrets.CARS_PRIVATE_KEY }}"
