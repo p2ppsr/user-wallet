@@ -1,6 +1,10 @@
 {
   "schema": "bsv-app",
   "schemaVersion": "1.0",
+  "frontend": {
+    "language": "html",
+    "sourceDirectory": "./frontend"
+  },
   "configs": [
     {
       "name": "user-wallet",
