@@ -1,4 +1,4 @@
-package app.metanet.client
+package app.user.wallet
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

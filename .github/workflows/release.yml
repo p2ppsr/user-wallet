@@ -130,7 +130,7 @@ jobs:
           mkdir -p AppDir/usr/share/metainfo
           cp src-tauri/target/release/user-wallet AppDir/usr/bin/
           cp src-tauri/user-wallet.desktop AppDir/usr/share/applications/
-          cp src-tauri/app.metanet.client.metainfo.xml AppDir/usr/share/metainfo/
+          cp src-tauri/app.user.wallet.metainfo.xml AppDir/usr/share/metainfo/
           cp src-tauri/icons/128x128.png AppDir/usr/share/icons/hicolor/128x128/apps/user-wallet.png
           # Set executable permissions
           chmod +x AppDir/usr/bin/user-wallet

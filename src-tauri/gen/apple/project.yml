@@ -1,6 +1,6 @@
 name: user-wallet
 options:
-  bundleIdPrefix: app.metanet.client
+  bundleIdPrefix: app.user.wallet
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -10,8 +10,8 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: Metanet Client
-      PRODUCT_BUNDLE_IDENTIFIER: app.metanet.client
+      PRODUCT_NAME: User Wallet
+      PRODUCT_BUNDLE_IDENTIFIER: app.user.wallet
 targetTemplates:
   app:
     type: application

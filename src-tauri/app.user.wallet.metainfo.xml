@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>app.metanet.client</id>
+  <id>app.user.wallet</id>
   <metadata_license>PROPRIETARY</metadata_license>
   <project_license>PROPRIETARY</project_license>
   <name>User Wallet</name>
