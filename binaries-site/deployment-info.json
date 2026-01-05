@@ -1,16 +1,12 @@
 {
   "schema": "bsv-app",
   "schemaVersion": "1.0",
-  "frontend": {
-    "language": "html",
-    "sourceDirectory": "./frontend"
-  },
   "configs": [
     {
-      "name": "Babbage",
+      "name": "user-wallet",
       "provider": "CARS",
-      "CARSCloudURL": "https://cars.babbage.systems",
-      "projectID": "0847ccc3b5b5d98fb219ae8d9c984be0",
+      "CARSCloudURL": "https://cars.metanet.club",
+      "projectID": "aa1d8dee433cc7a00443fc12ab348625",
       "network": "mainnet",
       "deploy": [
         "frontend"
