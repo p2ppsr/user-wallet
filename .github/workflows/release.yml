@@ -497,7 +497,7 @@ jobs:
                           print(f\"Manifest {path.name} missing url or signature for {target}\", file=sys.stderr)
                           sys.exit(1)
                       filename = os.path.basename(url)
-                      final_url = f\"https://desktop-binaries.getmetanet.com/{filename}\"
+                      final_url = f\"https://userwallet.getmetanet.com/{filename}\"
                       combined['platforms'][target] = {'url': final_url, 'signature': signature}
                       src = frontend / 'updater' / filename
                       dest = frontend / filename
