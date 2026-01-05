@@ -57,7 +57,6 @@ type ResolvedIdentity = {
 }
 
 function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: PaymentFormProps) {
-  const [recipient, setRecipient] = useState(defaultRecipient ?? '')
   const [searchValue, setSearchValue] = useState(defaultRecipient ?? '')
   const [options, setOptions] = useState<ResolvedIdentity[]>([])
   const [amount, setAmount] = useState<number>(0)
@@ -66,13 +65,13 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
   const [sending, setSending] = useState(false)
   const currencyConverter = useMemo(() => new CurrencyConverter(), [])
   const [converterReady, setConverterReady] = useState(false)
-  const [resolvingIdentity, setResolvingIdentity] = useState(false)
-  const [resolutionError, setResolutionError] = useState<string | null>(null)
   const [resolvedIdentity, setResolvedIdentity] = useState<ResolvedIdentity | null>(defaultRecipient ? { identityKey: defaultRecipient } : null)
   const [sendError, setSendError] = useState<string | null>(null)
   const [lastSent, setLastSent] = useState<{ identity: ResolvedIdentity; amount: number } | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
+
+  const identityKeyPattern = /^[0-9a-f]{20,}$/i
 
   useAsyncEffect(async () => {
     await currencyConverter.initialize()
@@ -118,22 +117,25 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
 
   const fetchIdentities = useCallback(async (query: string) => {
     if (!identityClient) return
-    if (!query || query.length < 2) {
+    const trimmed = query.trim()
+    if (!trimmed || trimmed.length < 2) {
       setOptions([])
       return
     }
     setSearchLoading(true)
     try {
-      const isKey = /^[0-9a-f]{20,}$/i.test(query.trim())
+      const isKey = identityKeyPattern.test(trimmed)
       const results = isKey
-        ? await identityClient.resolveByIdentityKey({ identityKey: query.trim() })
-        : await identityClient.resolveByAttributes({ attributes: { any: query } })
-      setOptions((results ?? []).map((item) => ({
+        ? await identityClient.resolveByIdentityKey({ identityKey: trimmed })
+        : await identityClient.resolveByAttributes({ attributes: { any: trimmed } })
+      const mapped = (results ?? []).map((item) => ({
         identityKey: item.identityKey ?? '',
         name: item.name,
         badgeLabel: item.badgeLabel,
         avatarURL: item.avatarURL
-      })))
+      }))
+
+      setOptions(mapped)
     } catch (error) {
       setOptions([])
     } finally {
@@ -143,86 +145,63 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
 
   const handleSearchChange = useCallback((_: unknown, value: string) => {
     setSearchValue(value)
-    setRecipient(value)
-    setResolutionError(null)
-    setResolvedIdentity(null)
-    fetchIdentities(value)
+    const trimmed = value.trim()
+
+    if (!trimmed) {
+      setResolvedIdentity(null)
+      setOptions([])
+      return
+    }
+    fetchIdentities(trimmed)
   }, [fetchIdentities])
 
   const handleSelectIdentity = useCallback((_: unknown, value: ResolvedIdentity | string | null) => {
     if (value === null) {
-      setRecipient('')
       setSearchValue('')
       setResolvedIdentity(null)
       return
     }
     if (typeof value === 'string') {
-      setRecipient(value)
       setSearchValue(value)
+      setResolvedIdentity(null)
+      fetchIdentities(value)
       return
     }
-    if (!value.identityKey) return
-    setRecipient(value.identityKey)
-    setSearchValue(value.identityKey)
+    if (!value.identityKey) {
+      setResolvedIdentity(null)
+      return
+    }
     setResolvedIdentity(value)
-    setResolutionError(null)
-  }, [])
+    setSearchValue(value.identityKey)
+  }, [fetchIdentities])
 
-  useEffect(() => {
-    if (!identityClient) return
-
-    const trimmed = recipient.trim()
-    if (!trimmed) {
+  const handleRecipientKeyDown = useCallback((event: any) => {
+    if (event.key === 'Backspace' && resolvedIdentity) {
+      // When a resolved identity is selected, treat Backspace as a full clear
+      // (same behavior as clicking the clear/X button) to avoid repeatedly
+      // re-querying for the same identity and freezing the UI.
+      event.preventDefault()
       setResolvedIdentity(null)
-      setResolutionError(null)
-      setResolvingIdentity(false)
-      return
+      setSearchValue('')
+      setOptions([])
     }
+  }, [resolvedIdentity])
 
-    const isLikelyIdentityKey = /^[0-9a-f]{20,}$/i.test(trimmed)
-    if (!isLikelyIdentityKey) {
-      setResolvedIdentity(null)
-      setResolutionError('Identity keys are hex values. Paste a full key or search above.')
-      return
-    }
+  const effectiveRecipient = (resolvedIdentity?.identityKey ?? searchValue).trim()
+  const hasRecipient = effectiveRecipient.length > 0
+  const isRecipientLikelyValid = resolvedIdentity
+    ? !!resolvedIdentity.identityKey
+    : identityKeyPattern.test(effectiveRecipient)
 
-    let cancelled = false
-    const handle = window.setTimeout(async () => {
-      setResolvingIdentity(true)
-      setResolutionError(null)
-      try {
-        const results = await identityClient.resolveByIdentityKey({ identityKey: trimmed })
-        if (cancelled) return
-        const match = results?.[0]
-        if (match) {
-          setResolvedIdentity({
-            identityKey: match.identityKey ?? trimmed,
-            name: match.name,
-            badgeLabel: match.badgeLabel,
-            avatarURL: match.avatarURL
-          })
-        } else {
-          setResolvedIdentity({ identityKey: trimmed })
-          setResolutionError('No identity details found for this key')
-        }
-      } catch (error) {
-        if (cancelled) return
-        setResolvedIdentity({ identityKey: trimmed })
-        setResolutionError((error as Error)?.message ?? 'Unable to resolve identity')
-      } finally {
-        if (!cancelled) setResolvingIdentity(false)
-      }
-    }, 250)
+  const identityError = !hasRecipient
+    ? null
+    : resolvedIdentity
+      ? null
+      : isRecipientLikelyValid
+        ? null
+        : 'Identity keys are hex values. Paste a full key or search above.'
 
-    return () => {
-      cancelled = true
-      window.clearTimeout(handle)
-    }
-  }, [recipient, identityClient])
-
-  const trimmedRecipient = recipient.trim()
-  const isRecipientLikelyValid = /^[0-9a-f]{20,}$/i.test(trimmedRecipient)
-  const canSend = peerPay !== null && isRecipientLikelyValid && amount > 0 && !sending
+  const canSend = peerPay !== null && hasRecipient && isRecipientLikelyValid && amount > 0 && !sending
 
   const performSend = async () => {
     if (!peerPay) return
@@ -230,15 +209,14 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
       setSending(true)
       setSendError(null)
       await peerPay.sendLivePayment({
-        recipient: trimmedRecipient,
+        recipient: effectiveRecipient,
         amount
       }, MESSAGEBOX_HOST)
       onSent?.()
       toast.success('Payment sent')
-      setLastSent({ identity: resolvedIdentity ?? { identityKey: trimmedRecipient }, amount })
+      setLastSent({ identity: resolvedIdentity ?? { identityKey: effectiveRecipient }, amount })
       setAmountInput('')
       setAmount(0)
-      setRecipient('')
       setSearchValue('')
       setResolvedIdentity(null)
     } catch (e) {
@@ -291,7 +269,7 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
                 <Avatar src={option.avatarURL} sx={{ width: 28, height: 28 }}>
                   {(option.name ?? option.identityKey ?? '?').slice(0, 1)}
                 </Avatar>
-                <Box>
+                <Box> 
                   <Typography variant="body2" fontWeight={600}>{option.name ?? 'Unknown identity'}</Typography>
                   <Typography variant="caption" color="text.secondary">{shortKey(option.identityKey)}</Typography>
                 </Box>
@@ -304,12 +282,12 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
               label="Recipient"
               placeholder="Search by name or paste identity key"
               helperText="We only send to BRC100 identities, NOT old-style type-1."
+              onKeyDown={handleRecipientKeyDown}
             />
           )}
         />
         <Stack direction="row" spacing={1} alignItems="center" sx={{ minHeight: 32 }}>
-          {resolvingIdentity && <CircularProgress size={18} />}
-          {resolvedIdentity && !resolvingIdentity && (
+          {resolvedIdentity && (
             <Stack direction="row" spacing={1} alignItems="center">
               <Avatar
                 src={resolvedIdentity.avatarURL}
@@ -327,9 +305,9 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
               </Box>
             </Stack>
           )}
-          {resolutionError && (
+          {identityError && (
             <Typography variant="caption" color="error">
-              {resolutionError}
+              {identityError}
             </Typography>
           )}
         </Stack>
@@ -371,7 +349,7 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
       <Stack direction="row" spacing={1}>
         <Button
           variant="contained"
-          disabled={!canSend || resolvingIdentity}
+          disabled={!canSend}
           onClick={() => setConfirmOpen(true)}
           startIcon={sending ? <CircularProgress size={18} sx={{ color: 'black' }} /> : null}
           fullWidth
@@ -390,7 +368,7 @@ function PaymentForm({ peerPay, onSent, defaultRecipient, identityClient }: Paym
                 {resolvedIdentity?.name ?? 'Unknown identity'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {shortKey(trimmedRecipient)}
+                {shortKey(effectiveRecipient)}
               </Typography>
             </Box>
             <Box>
@@ -440,9 +418,9 @@ function PaymentList({ payments, onRefresh, peerPay, loading, identityClient }: 
   }
 
   useEffect(() => {
-    if (!identityClient) return
+    if (!identityClient) return undefined
     const missingKeys = Array.from(new Set(payments.map((p) => p.sender))).filter((key) => !senderDetails[key])
-    if (missingKeys.length === 0) return
+    if (missingKeys.length === 0) return undefined
 
     let cancelled = false
     ;(async () => {
@@ -668,7 +646,6 @@ export default function PeerPayRoute({ defaultRecipient }: PeerPayRouteProps) {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const permissionsManager = managers?.permissionsManager
   const identityClient = clients.identityClient
 
   const walletClientForPeerPay = useMemo<WalletInterface | null>(() => {

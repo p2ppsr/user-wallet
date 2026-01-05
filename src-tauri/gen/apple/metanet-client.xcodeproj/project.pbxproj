@@ -28,12 +28,12 @@
 		1D6A76760DCCEFD32E1E69CE /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		40EBD9599E5DE8F11918318A /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
 		44373D6A7112C23E3AED271C /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
-		467FB0B96D82FA8EE81C4F9D /* metanet-client_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "metanet-client_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		467FB0B96D82FA8EE81C4F9D /* user-wallet_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "user-wallet_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C6A0D971F970BEB3AA9741C /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		57A56323487521C39AAAABB3 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		6B7F3E526FABAD7FEB1F66C1 /* tls.rs */ = {isa = PBXFileReference; path = tls.rs; sourceTree = "<group>"; };
 		6E472355CD8062CDCAB4A6E5 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
-		82988DCDC24A87082A55FAFE /* metanet-client_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "metanet-client_iOS.entitlements"; sourceTree = "<group>"; };
+		82988DCDC24A87082A55FAFE /* user-wallet_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "user-wallet_iOS.entitlements"; sourceTree = "<group>"; };
 		963007881B2CE6FBB1E4307D /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		99911D53296823C308B17A8D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		A172FBE564DC5C1BA691D465 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -65,7 +65,7 @@
 		105B1A2EC76F148A0359A084 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				467FB0B96D82FA8EE81C4F9D /* metanet-client_iOS.app */,
+				467FB0B96D82FA8EE81C4F9D /* user-wallet_iOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -81,13 +81,13 @@
 			path = ../../src;
 			sourceTree = "<group>";
 		};
-		37234B92229B0F67A0B3BEA9 /* metanet-client_iOS */ = {
+		37234B92229B0F67A0B3BEA9 /* user-wallet_iOS */ = {
 			isa = PBXGroup;
 			children = (
 				A172FBE564DC5C1BA691D465 /* Info.plist */,
-				82988DCDC24A87082A55FAFE /* metanet-client_iOS.entitlements */,
+				82988DCDC24A87082A55FAFE /* user-wallet_iOS.entitlements */,
 			);
-			path = "metanet-client_iOS";
+			path = "user-wallet_iOS";
 			sourceTree = "<group>";
 		};
 		447CA0748490059F201D639C /* Frameworks */ = {
@@ -113,13 +113,13 @@
 			path = bindings;
 			sourceTree = "<group>";
 		};
-		68E82BEF5B9B13A8D89D8583 /* metanet-client */ = {
+		68E82BEF5B9B13A8D89D8583 /* user-wallet */ = {
 			isa = PBXGroup;
 			children = (
 				1D6A76760DCCEFD32E1E69CE /* main.mm */,
 				46A54FC25A367BA4AD572C78 /* bindings */,
 			);
-			path = "metanet-client";
+			path = "user-wallet";
 			sourceTree = "<group>";
 		};
 		A1C138B2EFB2342F1A6C88F3 = {
@@ -129,7 +129,7 @@
 				C4B895014CFAD68452F3D002 /* Assets.xcassets */,
 				D050540629CA02610A47D318 /* LaunchScreen.storyboard */,
 				F84C119F20A008953F05E5C3 /* Externals */,
-				37234B92229B0F67A0B3BEA9 /* metanet-client_iOS */,
+				37234B92229B0F67A0B3BEA9 /* user-wallet_iOS */,
 				D99B828E0351C43CE035CCFF /* Sources */,
 				2B4002F4B998EB5F24A84584 /* src */,
 				447CA0748490059F201D639C /* Frameworks */,
@@ -140,7 +140,7 @@
 		D99B828E0351C43CE035CCFF /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				68E82BEF5B9B13A8D89D8583 /* metanet-client */,
+				68E82BEF5B9B13A8D89D8583 /* user-wallet */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -155,9 +155,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8C0956E12669C10F9A091EFC /* metanet-client_iOS */ = {
+		8C0956E12669C10F9A091EFC /* user-wallet_iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 329819BF547525599BF7AF34 /* Build configuration list for PBXNativeTarget "metanet-client_iOS" */;
+			buildConfigurationList = 329819BF547525599BF7AF34 /* Build configuration list for PBXNativeTarget "user-wallet_iOS" */;
 			buildPhases = (
 				9BCF74D6AF32D5E84F39FB32 /* Build Rust Code */,
 				0B198C4181C613F8BA782165 /* Sources */,
@@ -168,11 +168,11 @@
 			);
 			dependencies = (
 			);
-			name = "metanet-client_iOS";
+			name = "user-wallet_iOS";
 			packageProductDependencies = (
 			);
-			productName = "metanet-client_iOS";
-			productReference = 467FB0B96D82FA8EE81C4F9D /* metanet-client_iOS.app */;
+			productName = "user-wallet_iOS";
+			productReference = 467FB0B96D82FA8EE81C4F9D /* user-wallet_iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -184,7 +184,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 			};
-			buildConfigurationList = 82AF078833DCCA07CCB91DE6 /* Build configuration list for PBXProject "metanet-client" */;
+			buildConfigurationList = 82AF078833DCCA07CCB91DE6 /* Build configuration list for PBXProject "user-wallet" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -198,7 +198,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8C0956E12669C10F9A091EFC /* metanet-client_iOS */,
+				8C0956E12669C10F9A091EFC /* user-wallet_iOS */,
 			);
 		};
 /* End PBXProject section */
@@ -260,7 +260,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "metanet-client_iOS/metanet-client_iOS.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "user-wallet_iOS/user-wallet_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -268,7 +268,7 @@
 					"$(inherited)",
 					"\".\"",
 				);
-				INFOPLIST_FILE = "metanet-client_iOS/Info.plist";
+				INFOPLIST_FILE = "user-wallet_iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -410,7 +410,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "metanet-client_iOS/metanet-client_iOS.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "user-wallet_iOS/user-wallet_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -418,7 +418,7 @@
 					"$(inherited)",
 					"\".\"",
 				);
-				INFOPLIST_FILE = "metanet-client_iOS/Info.plist";
+				INFOPLIST_FILE = "user-wallet_iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -436,7 +436,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		329819BF547525599BF7AF34 /* Build configuration list for PBXNativeTarget "metanet-client_iOS" */ = {
+		329819BF547525599BF7AF34 /* Build configuration list for PBXNativeTarget "user-wallet_iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3D3ABEF088126B1CBC1B50D3 /* debug */,
@@ -445,7 +445,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = debug;
 		};
-		82AF078833DCCA07CCB91DE6 /* Build configuration list for PBXProject "metanet-client" */ = {
+		82AF078833DCCA07CCB91DE6 /* Build configuration list for PBXProject "user-wallet" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				86239D5E2A99FD3DB29ED879 /* debug */,

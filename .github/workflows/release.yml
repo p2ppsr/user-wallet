@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or tag to build'
+        required: true
+        default: 'master'
 
 jobs:
   publish-tauri:
@@ -28,6 +34,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -120,12 +128,12 @@ jobs:
           mkdir -p AppDir/usr/share/applications
           mkdir -p AppDir/usr/share/icons/hicolor/128x128/apps
           mkdir -p AppDir/usr/share/metainfo
-          cp src-tauri/target/release/metanet-client AppDir/usr/bin/
-          cp src-tauri/metanet-client.desktop AppDir/usr/share/applications/
+          cp src-tauri/target/release/user-wallet AppDir/usr/bin/
+          cp src-tauri/user-wallet.desktop AppDir/usr/share/applications/
           cp src-tauri/app.metanet.client.metainfo.xml AppDir/usr/share/metainfo/
-          cp src-tauri/icons/128x128.png AppDir/usr/share/icons/hicolor/128x128/apps/metanet-client.png
+          cp src-tauri/icons/128x128.png AppDir/usr/share/icons/hicolor/128x128/apps/user-wallet.png
           # Set executable permissions
-          chmod +x AppDir/usr/bin/metanet-client
+          chmod +x AppDir/usr/bin/user-wallet
 
       - name: Download linuxdeploy AppImage
         if: matrix.platform == 'ubuntu-22.04'
@@ -142,8 +150,8 @@ jobs:
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
         run: |
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage --icon-file=AppDir/usr/share/icons/hicolor/128x128/apps/metanet-client.png --desktop-file=AppDir/usr/share/applications/metanet-client.desktop
-          mv Metanet_Client-x86_64.AppImage metanet-client-x86_64.AppImage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage --icon-file=AppDir/usr/share/icons/hicolor/128x128/apps/user-wallet.png --desktop-file=AppDir/usr/share/applications/user-wallet.desktop
+          mv User_Wallet-x86_64.AppImage user-wallet-x86_64.AppImage
 
       - name: Import GPG Key for Linux Signing
         if: matrix.platform == 'ubuntu-22.04'
@@ -162,12 +170,12 @@ jobs:
           export GPG_TTY=$(tty)
           # Get the key ID from the imported key
           KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
-          gpg --batch --yes --pinentry-mode loopback --local-user $KEY_ID --detach-sign --armor metanet-client-x86_64.AppImage
+          gpg --batch --yes --pinentry-mode loopback --local-user $KEY_ID --detach-sign --armor user-wallet-x86_64.AppImage
 
       - name: Create and Sign SHA256SUMS
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          sha256sum metanet-client-x86_64.AppImage > SHA256SUMS
+          sha256sum user-wallet-x86_64.AppImage > SHA256SUMS
           export GPG_TTY=$(tty)
           # Get the key ID from the imported key
           KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
@@ -179,8 +187,8 @@ jobs:
         with:
           name: linux-artifacts
           path: |
-            metanet-client-x86_64.AppImage
-            metanet-client-x86_64.AppImage.asc
+            user-wallet-x86_64.AppImage
+            user-wallet-x86_64.AppImage.asc
             SHA256SUMS
             SHA256SUMS.asc
 
@@ -294,7 +302,7 @@ jobs:
                 echo "No DMG found for macOS arm64 build" >&2
                 exit 1
               fi
-              cp "$dmg_path" "release-uploads/metanet-client-macos-arm64.dmg"
+              cp "$dmg_path" "release-uploads/user-wallet-macos-arm64.dmg"
               ;;
             macos-x64)
               dmg_path=$(find_dmg "x86_64")
@@ -302,11 +310,11 @@ jobs:
                 echo "No DMG found for macOS x64 build" >&2
                 exit 1
               fi
-              cp "$dmg_path" "release-uploads/metanet-client-macos-x64.dmg"
+              cp "$dmg_path" "release-uploads/user-wallet-macos-x64.dmg"
               ;;
             linux-x86_64)
-              cp metanet-client-x86_64.AppImage release-uploads/metanet-client-linux-x86_64.AppImage
-              cp metanet-client-x86_64.AppImage.asc release-uploads/metanet-client-linux-x86_64.AppImage.asc
+              cp user-wallet-x86_64.AppImage release-uploads/user-wallet-linux-x86_64.AppImage
+              cp user-wallet-x86_64.AppImage.asc release-uploads/user-wallet-linux-x86_64.AppImage.asc
               cp SHA256SUMS release-uploads/SHA256SUMS
               cp SHA256SUMS.asc release-uploads/SHA256SUMS.asc
               ;;
@@ -316,7 +324,7 @@ jobs:
                 echo "No MSI installer found for Windows build" >&2
                 exit 1
               fi
-              cp "$msi_path" "release-uploads/metanet-client-windows-x64.msi"
+              cp "$msi_path" "release-uploads/user-wallet-windows-x64.msi"
               exe_path=$(
                 find src-tauri/target -type f -name "*.exe" \( -path "*bundle/nsis/*" -o -path "*bundle/nsis-web/*" \) -print -quit
               )
@@ -327,7 +335,7 @@ jobs:
                 echo "No EXE installer found for Windows build" >&2
                 exit 1
               fi
-              cp "$exe_path" "release-uploads/metanet-client-windows-x64.exe"
+              cp "$exe_path" "release-uploads/user-wallet-windows-x64.exe"
               ;;
             *)
               echo "No packaging rules for $ARTIFACT_SUFFIX; skipping."
@@ -411,9 +419,9 @@ jobs:
             fi
           fi
           if [ -n "$extension" ]; then
-            dest_package="metanet-client-${UPDATER_TARGET}.${extension}"
+            dest_package="user-wallet-${UPDATER_TARGET}.${extension}"
           else
-            dest_package="metanet-client-${UPDATER_TARGET}"
+            dest_package="user-wallet-${UPDATER_TARGET}"
           fi
           dest_signature="${dest_package}.sig"
           cp "$selected_package" "release-uploads/updater/$dest_package"
@@ -537,9 +545,3 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install CARS globally
-        run: npm i -g @bsv/cars-cli@latest
-
-      - name: Build and release artifact
-        run: cd binaries-site && cars build 0 && cars release now 0 --key "${{ secrets.CARS_PRIVATE_KEY }}"

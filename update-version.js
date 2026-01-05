@@ -44,15 +44,15 @@ const filesToUpdate = [
   {
     path: 'src-tauri/Cargo.lock',
     update: (content) => {
-      // Update the version in Cargo.lock for the metanet-client package
+      // Update the version in Cargo.lock for the user-wallet package
       return content.replace(
-        /(\[\[package\]\]\s+name = "metanet-client"\s+version = ").*?(")/, 
+        /(\[\[package\]\]\s+name = "user-wallet"\s+version = ").*?(")/, 
         `$1${newVersion}$2`
       );
     }
   },
   {
-    path: 'src-tauri/metanet-client.appdata.xml',
+    path: 'src-tauri/user-wallet.appdata.xml',
     update: (content) => {
       // Update both version and release date
       const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
