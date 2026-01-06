@@ -544,5 +544,11 @@ jobs:
       - name: Install CARS globally
         run: npm i -g @bsv/cars-cli@latest
 
+      - name: List frontend contents before CARS build
+        run: |
+          cd binaries-site
+          echo "=== binaries-site/frontend ==="
+          ls -R frontend
+
       - name: Build and release artifact
         run: cd binaries-site && cars build 0 && cars release now 0 --key "${{ secrets.CARS_PRIVATE_KEY }}"
