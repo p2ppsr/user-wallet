@@ -9,8 +9,8 @@
     {
       "name": "user-wallet",
       "provider": "CARS",
-      "CARSCloudURL": "https://cars.babbage.systems",
-      "projectID": "60cb777b729f1f272d9ca70a141a3e8d",
+      "CARSCloudURL": "https://cars.metanet.club",
+      "projectID": "aa1d8dee433cc7a00443fc12ab348625",
       "network": "mainnet",
       "deploy": [
         "frontend"
