@@ -27,7 +27,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://desktop-binaries.getmetanet.com/manifest.json"
+        "https://userwallet.getmetanet.com/manifest.json"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU2MDdCRDQwNjhGRDQ1QjUKUldTMVJmMW9RTDBINXI3ZFJmL2JsZTlhRmhyTTBSUWZVdVg5cVQ0c1o1dEo2QmdoN2FUUFZ0QXcK"
