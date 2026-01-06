@@ -427,6 +427,26 @@ jobs:
           ARTIFACT_SUFFIX="$ARTIFACT_SUFFIX" \
           python3 -c "import json, os, pathlib; manifest = {'version': os.environ['APP_VERSION'], 'pub_date': os.environ['PUB_DATE'], 'platforms': {os.environ['UPDATER_TARGET']: {'url': os.environ['DEST_PACKAGE'], 'signature': os.environ['SIGNATURE']}}}; path = pathlib.Path('release-uploads') / ('manifest-' + os.environ['ARTIFACT_SUFFIX'] + '.json'); path.write_text(json.dumps(manifest, indent=2) + '\n')"
 
+      - name: Dump release-uploads directory before upload
+        env:
+          ARTIFACT_SUFFIX: ${{ matrix.artifact_suffix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== release-uploads dump (${ARTIFACT_SUFFIX}) ==="
+          echo "--- ls -lah release-uploads ---"
+          ls -lah release-uploads || true
+          echo "--- tree (find release-uploads) ---"
+          find release-uploads -maxdepth 3 -print || true
+          echo "--- file sizes (maxdepth 2) ---"
+          find release-uploads -maxdepth 2 -type f -print0 | xargs -0 ls -lah || true
+          echo "--- sha256 (selected small files) ---"
+          for f in release-uploads/*.json release-uploads/SHA256SUMS release-uploads/*.asc; do
+            if [ -f "$f" ]; then
+              sha256sum "$f" || true
+            fi
+          done
+
       - name: Upload binaries for static site
         # if: matrix.platform != 'windows-2022'
         uses: actions/upload-artifact@v4
@@ -449,6 +469,21 @@ jobs:
           pattern: binaries-*
           path: binaries-site/frontend
           merge-multiple: true
+
+      - name: Dump frontend contents after artifact download
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== binaries-site/frontend after download-artifact ==="
+          echo "--- pwd ---"
+          pwd
+          echo "--- ls -lah binaries-site/frontend ---"
+          ls -lah binaries-site/frontend || true
+          echo "--- tree (find binaries-site/frontend) ---"
+          find binaries-site/frontend -maxdepth 3 -print || true
+          echo "--- file sizes (maxdepth 2) ---"
+          find binaries-site/frontend -maxdepth 2 -type f -print0 | xargs -0 ls -lah || true
+
       - name: Merge updater manifests
         run: |
           set -euo pipefail
@@ -545,10 +580,24 @@ jobs:
         run: npm i -g @bsv/cars-cli@latest
 
       - name: List frontend contents before CARS build
+        shell: bash
         run: |
+          set -euo pipefail
           cd binaries-site
-          echo "=== binaries-site/frontend ==="
-          ls -R frontend
+          echo "=== binaries-site/frontend before cars build ==="
+          echo "--- ls -lah frontend ---"
+          ls -lah frontend || true
+          echo "--- tree (find frontend) ---"
+          find frontend -maxdepth 3 -print || true
+          echo "--- file sizes (maxdepth 2) ---"
+          find frontend -maxdepth 2 -type f -print0 | xargs -0 ls -lah || true
+          echo "--- spot check: manifest + checksums (if present) ---"
+          for f in frontend/manifest.json frontend/SHA256SUMS frontend/SHA256SUMS.asc; do
+            if [ -f "$f" ]; then
+              echo "=== head $f ==="
+              sed -n '1,40p' "$f" || true
+            fi
+          done
 
       - name: Build and release artifact
         run: cd binaries-site && cars build 0 && cars release now 0 --key "${{ secrets.CARS_PRIVATE_KEY }}"
