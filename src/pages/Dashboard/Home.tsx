@@ -23,7 +23,8 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
 import { openUrl } from '../../utils/openUrl'
 import CustomDialog from '../../components/CustomDialog'
 import { WalletContext } from '../../WalletContext'
-import { showSatoshiShopFundingModal } from '../Shop/shopModal'
+import { ExchangeRateContext } from '../../components/AmountDisplay/ExchangeRateContextProvider'
+import { showSatoshiShopFundingModal, showSatoshiShopPendingTransactionsModal } from '../Shop/shopModal'
 
 // --- Animations ---
 const hoverLift = {
@@ -56,6 +57,7 @@ export default function Home() {
   const theme = useTheme()
 
   const { managers } = useContext(WalletContext)
+  const rates = useContext<any>(ExchangeRateContext)
   const [buySellOpen, setBuySellOpen] = useState(false)
   const [isFunding, setIsFunding] = useState(false)
 
@@ -128,7 +130,30 @@ export default function Home() {
         title: 'Buy BSV Satoshis',
         introText: 'Use your card to top up your BSV wallet.',
         postPurchaseText: 'Once your sats arrive, you can spend them from your wallet.',
-        cancelText: 'Close'
+        cancelText: 'Close',
+        marketSatoshisPerUSD: rates?.satoshisPerUSD
+      })
+    } finally {
+      setIsFunding(false)
+      setBuySellOpen(false)
+    }
+  }
+
+  const handlePendingTransactions = async () => {
+    const wallet = walletClientForFunding
+    if (!wallet) {
+      setBuySellOpen(false)
+      return
+    }
+
+    try {
+      setIsFunding(true)
+      await showSatoshiShopPendingTransactionsModal(wallet, {
+        title: 'Buy BSV Satoshis',
+        introText: 'Use your card to top up your BSV wallet.',
+        postPurchaseText: 'Once your sats arrive, you can spend them from your wallet.',
+        cancelText: 'Close',
+        marketSatoshisPerUSD: rates?.satoshisPerUSD
       })
     } finally {
       setIsFunding(false)
@@ -337,6 +362,19 @@ export default function Home() {
               >
                 {isFunding ? 'Opening Buy Flow…' : 'Buy Sats'}
               </Button>
+
+              <Box sx={{ mt: 1.25, display: 'flex', justifyContent: 'center' }}>
+                <Button
+                  variant="text"
+                  color="inherit"
+                  size="small"
+                  disabled={isFunding}
+                  onClick={handlePendingTransactions}
+                  sx={{ textTransform: 'none', opacity: 0.9 }}
+                >
+                  {isFunding ? 'Opening…' : 'Pending Transactions'}
+                </Button>
+              </Box>
             </Box>
 
             <Box
