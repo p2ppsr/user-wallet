@@ -23,7 +23,7 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
 import { openUrl } from '../../utils/openUrl'
 import CustomDialog from '../../components/CustomDialog'
 import { WalletContext } from '../../WalletContext'
-import FiatRampDialog, { type FiatRampMode } from '../../components/FiatRampDialog'
+import GuardarianRampDialog, { type GuardarianRampMode } from '../../components/GuardarianRampDialog'
 
 // --- Animations ---
 const hoverLift = {
@@ -57,7 +57,7 @@ export default function Home() {
 
   const { managers, network } = useContext(WalletContext)
   const [buySellOpen, setBuySellOpen] = useState(false)
-  const [rampMode, setRampMode] = useState<FiatRampMode | null>(null)
+  const [rampMode, setRampMode] = useState<GuardarianRampMode | null>(null)
   const [rampOpen, setRampOpen] = useState(false)
 
   const walletClientForFunding = useMemo<WalletInterface | null>(() => {
@@ -116,7 +116,7 @@ export default function Home() {
     }
   ]), [navigate])
 
-  const handleOpenRamp = (mode: FiatRampMode) => {
+  const handleOpenRamp = (mode: GuardarianRampMode) => {
     setRampMode(mode)
     setRampOpen(true)
     setBuySellOpen(false)
@@ -312,7 +312,7 @@ export default function Home() {
                 Buy
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Purchase BSV with your card or bank transfer via Changelly.
+                Purchase BSV with your card or bank transfer via Guardarian.
               </Typography>
               <Button
                 variant="contained"
@@ -338,7 +338,7 @@ export default function Home() {
                 Sell
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Sell BSV into your chosen fiat currency through Changelly.
+                Sell BSV into your chosen fiat currency through Guardarian.
               </Typography>
               <Button
                 variant="contained"
@@ -353,7 +353,7 @@ export default function Home() {
           </Stack>
         </Stack>
       </CustomDialog>
-      <FiatRampDialog
+      <GuardarianRampDialog
         open={rampOpen}
         mode={rampMode}
         onClose={() => setRampOpen(false)}
