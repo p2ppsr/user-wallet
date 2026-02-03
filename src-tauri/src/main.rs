@@ -8,6 +8,7 @@
 use std::ffi::{c_void, CStr};
 use std::{
     convert::Infallible,
+    env,
     fs,
     net::SocketAddr,
     path::{Path, PathBuf},
@@ -47,10 +48,16 @@ use hyper::{
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tauri::{Emitter, Listener, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window};
 use tokio::{net::TcpListener, sync::oneshot};
 use tokio_rustls::TlsAcceptor;
 use url::Url;
+use base64::{engine::general_purpose, Engine as _};
+use rsa::pkcs1::DecodeRsaPrivateKey;
+use rsa::pkcs1v15::SigningKey;
+use sha2::Sha256;
+use signature::Signer;
 
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 use tauri::image::Image;
@@ -97,6 +104,20 @@ struct ProxyFetchResponse {
     body: String,
 }
 
+#[derive(Deserialize)]
+struct ChangellyFiatRequest {
+    method: String,
+    path: String,
+    query: Option<std::collections::BTreeMap<String, String>>,
+    body: Option<serde_json::Value>,
+}
+
+#[derive(Serialize)]
+struct ChangellyFiatResponse {
+    status: u16,
+    body: serde_json::Value,
+}
+
 #[tauri::command]
 async fn proxy_fetch_manifest(url: String) -> Result<ProxyFetchResponse, String> {
     let parsed = Url::parse(&url).map_err(|e| format!("invalid url: {e}"))?;
@@ -135,6 +156,85 @@ async fn proxy_fetch_manifest(url: String) -> Result<ProxyFetchResponse, String>
         headers: headers_vec,
         body,
     })
+}
+
+#[tauri::command]
+async fn changelly_fiat_request(request: ChangellyFiatRequest) -> Result<ChangellyFiatResponse, String> {
+    const BASE_URL: &str = "https://fiat-api.changelly.com";
+    let api_key = env::var("CHANGELLY_FIAT_API_PUBLIC_KEY")
+        .map_err(|_| "Missing CHANGELLY_FIAT_API_PUBLIC_KEY".to_string())?;
+    let private_key_b64 = env::var("CHANGELLY_FIAT_API_PRIVATE_KEY_BASE64")
+        .map_err(|_| "Missing CHANGELLY_FIAT_API_PRIVATE_KEY_BASE64".to_string())?;
+
+    if request.path.contains("://") {
+        return Err("Invalid path".to_string());
+    }
+    let normalized_path = if request.path.starts_with('/') {
+        request.path.clone()
+    } else {
+        format!("/{}", request.path)
+    };
+    if !normalized_path.starts_with("/v1/") {
+        return Err("Only /v1/ endpoints are allowed".to_string());
+    }
+
+    let mut url = Url::parse(BASE_URL)
+        .map_err(|e| format!("Invalid base url: {e}"))?
+        .join(&normalized_path)
+        .map_err(|e| format!("Invalid path: {e}"))?;
+
+    if let Some(query) = &request.query {
+        let mut pairs = url.query_pairs_mut();
+        for (k, v) in query {
+            if !k.is_empty() && !v.is_empty() {
+                pairs.append_pair(k, v);
+            }
+        }
+    }
+
+    let method = request.method.to_uppercase();
+    let message = if method == "GET" {
+        json!({})
+    } else {
+        request.body.clone().unwrap_or_else(|| json!({}))
+    };
+
+    let payload = format!("{}{}", url.as_str(), serde_json::to_string(&message).unwrap_or_else(|_| "{}".to_string()));
+    let private_key_pem = general_purpose::STANDARD
+        .decode(private_key_b64.trim())
+        .map_err(|e| format!("Invalid private key base64: {e}"))?;
+    let private_key_str = std::str::from_utf8(&private_key_pem)
+        .map_err(|e| format!("Invalid private key PEM: {e}"))?;
+    let private_key = rsa::RsaPrivateKey::from_pkcs1_pem(private_key_str)
+        .map_err(|e| format!("Invalid private key: {e}"))?;
+    let signing_key = SigningKey::<Sha256>::new(private_key);
+    let signature = signing_key.sign(payload.as_bytes());
+    let signature_bytes: Box<[u8]> = signature.into();
+    let signature_b64 = general_purpose::STANDARD.encode(signature_bytes);
+
+    let client = Client::builder()
+        .user_agent("user-wallet/1.0")
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let request_builder = match method.as_str() {
+        "GET" => client.get(url),
+        "POST" => client.post(url).json(&message),
+        _ => return Err("Unsupported method".to_string()),
+    };
+
+    let resp = request_builder
+        .header("X-API-KEY", api_key)
+        .header("X-API-SIGN", signature_b64)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = resp.status().as_u16();
+    let body_text = resp.text().await.map_err(|e| e.to_string())?;
+    let body_json = serde_json::from_str(&body_text).unwrap_or_else(|_| json!({ "raw": body_text }));
+
+    Ok(ChangellyFiatResponse { status, body: body_json })
 }
 
 static MAIN_WINDOW_NAME: &str = "main";
@@ -861,7 +961,8 @@ fn main() {
         relinquish_focus,
         download,
         save_file,
-        proxy_fetch_manifest
+        proxy_fetch_manifest,
+        changelly_fiat_request
     ])
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_dialog::init())

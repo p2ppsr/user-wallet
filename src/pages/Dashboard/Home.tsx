@@ -23,8 +23,7 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
 import { openUrl } from '../../utils/openUrl'
 import CustomDialog from '../../components/CustomDialog'
 import { WalletContext } from '../../WalletContext'
-import { ExchangeRateContext } from '../../components/AmountDisplay/ExchangeRateContextProvider'
-import { showSatoshiShopFundingModal, showSatoshiShopPendingTransactionsModal } from '../Shop/shopModal'
+import FiatRampDialog, { type FiatRampMode } from '../../components/FiatRampDialog'
 
 // --- Animations ---
 const hoverLift = {
@@ -56,10 +55,10 @@ export default function Home() {
   const navigate = useNavigate()
   const theme = useTheme()
 
-  const { managers } = useContext(WalletContext)
-  const rates = useContext<any>(ExchangeRateContext)
+  const { managers, network } = useContext(WalletContext)
   const [buySellOpen, setBuySellOpen] = useState(false)
-  const [isFunding, setIsFunding] = useState(false)
+  const [rampMode, setRampMode] = useState<FiatRampMode | null>(null)
+  const [rampOpen, setRampOpen] = useState(false)
 
   const walletClientForFunding = useMemo<WalletInterface | null>(() => {
     const pm = managers?.permissionsManager as any
@@ -117,48 +116,10 @@ export default function Home() {
     }
   ]), [navigate])
 
-  const handleBuy = async () => {
-    const wallet = walletClientForFunding
-    if (!wallet) {
-      setBuySellOpen(false)
-      return
-    }
-
-    try {
-      setIsFunding(true)
-      await showSatoshiShopFundingModal(wallet, 0, {
-        title: 'Buy BSV Satoshis',
-        introText: 'Use your card to top up your BSV wallet.',
-        postPurchaseText: 'Once your sats arrive, you can spend them from your wallet.',
-        cancelText: 'Close',
-        marketSatoshisPerUSD: rates?.satoshisPerUSD
-      })
-    } finally {
-      setIsFunding(false)
-      setBuySellOpen(false)
-    }
-  }
-
-  const handlePendingTransactions = async () => {
-    const wallet = walletClientForFunding
-    if (!wallet) {
-      setBuySellOpen(false)
-      return
-    }
-
-    try {
-      setIsFunding(true)
-      await showSatoshiShopPendingTransactionsModal(wallet, {
-        title: 'Buy BSV Satoshis',
-        introText: 'Use your card to top up your BSV wallet.',
-        postPurchaseText: 'Once your sats arrive, you can spend them from your wallet.',
-        cancelText: 'Close',
-        marketSatoshisPerUSD: rates?.satoshisPerUSD
-      })
-    } finally {
-      setIsFunding(false)
-      setBuySellOpen(false)
-    }
+  const handleOpenRamp = (mode: FiatRampMode) => {
+    setRampMode(mode)
+    setRampOpen(true)
+    setBuySellOpen(false)
   }
 
   return (
@@ -329,12 +290,12 @@ export default function Home() {
 
       <CustomDialog
         open={buySellOpen}
-        onClose={isFunding ? undefined : () => setBuySellOpen(false)}
+        onClose={() => setBuySellOpen(false)}
         title="Buy / Sell BSV"
       >
         <Stack spacing={3} sx={{ pt: 1 }}>
           <Typography variant="body1">
-            Choose how you want to manage your BSV satoshis.
+            Choose how you want to manage your BSV balance.
           </Typography>
 
           <Stack direction="column" spacing={2}>
@@ -351,30 +312,17 @@ export default function Home() {
                 Buy
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Purchase BSV satoshis with your card via Satoshi Shop.
+                Purchase BSV with your card or bank transfer via Changelly.
               </Typography>
               <Button
                 variant="contained"
                 color="primary"
                 fullWidth
-                disabled={isFunding}
-                onClick={handleBuy}
+                disabled={!walletClientForFunding}
+                onClick={() => handleOpenRamp('buy')}
               >
-                {isFunding ? 'Opening Buy Flow…' : 'Buy Sats'}
+                Buy BSV
               </Button>
-
-              <Box sx={{ mt: 1.25, display: 'flex', justifyContent: 'center' }}>
-                <Button
-                  variant="text"
-                  color="inherit"
-                  size="small"
-                  disabled={isFunding}
-                  onClick={handlePendingTransactions}
-                  sx={{ textTransform: 'none', opacity: 0.9 }}
-                >
-                  {isFunding ? 'Opening…' : 'Pending Transactions'}
-                </Button>
-              </Box>
             </Box>
 
             <Box
@@ -382,29 +330,36 @@ export default function Home() {
                 flex: 1,
                 p: 2,
                 borderRadius: 3,
-                border: '1px dashed',
-                borderColor: 'divider',
-                opacity: 0.7
+                border: '1px solid',
+                borderColor: 'divider'
               }}
             >
               <Typography variant="h6" gutterBottom>
                 Sell
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Coming Soon
+                Sell BSV into your chosen fiat currency through Changelly.
               </Typography>
               <Button
-                variant="outlined"
-                color="inherit"
+                variant="contained"
+                color="primary"
                 fullWidth
-                disabled
+                disabled={!walletClientForFunding}
+                onClick={() => handleOpenRamp('sell')}
               >
-                Sell (Coming Soon)
+                Sell BSV
               </Button>
             </Box>
           </Stack>
         </Stack>
       </CustomDialog>
+      <FiatRampDialog
+        open={rampOpen}
+        mode={rampMode}
+        onClose={() => setRampOpen(false)}
+        wallet={walletClientForFunding}
+        network={network ?? 'mainnet'}
+      />
     </Container>
   )
 }

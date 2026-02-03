@@ -33,6 +33,13 @@ If you hit macOS build issues for Rollup, install `npm i -g @rollup/rollup-darwi
 - **Native build:** `npm run tauri build`
 - **Format:** `npm run format`
 
+## Fiat on/off-ramp (Changelly)
+The wallet integrates Changelly’s Fiat API for buy/sell and KYC. You must supply API credentials at runtime:
+- `CHANGELLY_FIAT_API_PUBLIC_KEY` — your Changelly Fiat API public key.
+- `CHANGELLY_FIAT_API_PRIVATE_KEY_BASE64` — base64-encoded RSA PKCS#1 private key provided by Changelly.
+
+These values are read by the Tauri backend (`changelly_fiat_request` command) and never bundled into the frontend.
+
 ## How to contribute
 We love thoughtful contributions. A great PR usually:
 1) Opens an issue (or comments on one) describing the change and risk areas.  
